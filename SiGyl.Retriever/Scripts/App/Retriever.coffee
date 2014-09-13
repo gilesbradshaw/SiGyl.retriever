@@ -1,8 +1,14 @@
 
 define [
-	"q"
+	"Q"
 	"linq"
 ],(Q,linq) ->
+
+
+
+	joinParser=6
+
+
 	rindex=0;
 	class Retriever
 		constructor:(source, store, listener)->

@@ -1,6 +1,7 @@
 (function() {
-  define(["q", "linq"], function(Q, linq) {
-    var Retriever, rindex;
+  define(["Q", "linq"], function(Q, linq) {
+    var Retriever, joinParser, rindex;
+    joinParser = 6;
     rindex = 0;
     return Retriever = (function() {
       function Retriever(source, store, listener) {

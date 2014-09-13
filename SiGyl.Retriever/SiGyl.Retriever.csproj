@@ -59,7 +59,18 @@
   <ItemGroup>
     <Content Include="packages.config" />
     <Content Include="Scripts\App\App.coffee" />
+    <Content Include="Scripts\App\BreezeRetriever.js">
+      <DependentUpon>BreezeRetriever.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\BreezeRetriever.min.js">
+      <DependentUpon>BreezeRetriever.coffee</DependentUpon>
+    </Content>
     <Content Include="Scripts\App\Retriever.coffee" />
+    <Content Include="Scripts\App\BreezeRetriever.coffee" />
+    <None Include="Scripts\jquery-2.1.1.intellisense.js" />
+    <Content Include="Scripts\jquery-2.1.1.js" />
+    <Content Include="Scripts\jquery-2.1.1.min.js" />
+    <Content Include="Scripts\jquery-2.1.1.min.map" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -81,6 +92,11 @@
     <Content Include="Scripts\App\Retriever.min.js">
       <DependentUpon>Retriever.coffee</DependentUpon>
     </Content>
+    <None Include="Scripts\breeze.intellisense.js" />
+    <Content Include="Scripts\breeze.debug.js" />
+    <Content Include="Scripts\breeze.min.js" />
+    <Content Include="Scripts\knockout-3.2.0.debug.js" />
+    <Content Include="Scripts\knockout-3.2.0.js" />
     <Content Include="Scripts\linqjs-amd.js" />
     <Content Include="Scripts\q.js" />
     <Content Include="Scripts\q.min.js" />
