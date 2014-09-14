@@ -17,11 +17,12 @@
       retriever: "app/retriever",
       breeze: "breeze.debug",
       knockout: "knockout-3.2.0",
-      breezeretriever: "App/BreezeRetriever"
+      breezeretriever: "App/BreezeRetriever",
+      breezeEntityManagers: "App/BreezeEntityManagers"
     }
   });
 
-  require(["linq", "retriever", "Q", "breeze", "breezeretriever", "sinon"], function(linq, Retriever, Q, breeze, breezeRetriever) {
+  require(["linq", "retriever", "Q", "breezeretriever", "sinon"], function(linq, Retriever, Q, breezeRetriever) {
     QUnit.test("check linq", function(assert) {
       return assert.ok(linq, 'linq installed');
     });
@@ -192,7 +193,7 @@
     QUnit.asyncTest("breezeRetrieve get", sinon.test(function(assert) {
       var promise;
       this.server.restore();
-      promise = breezeRetriever("configuration").get([
+      promise = breezeRetriever.get([
         {
           "ids": [
             {
@@ -239,7 +240,7 @@
     QUnit.asyncTest("breezeRetrieve get collection", sinon.test(function(assert) {
       var promise;
       this.server.restore();
-      promise = breezeRetriever("history").getCollection([
+      promise = breezeRetriever.getCollection([
         {
           "collections": [
             {
@@ -317,85 +318,6 @@
         return QUnit.start();
       });
     }));
-    QUnit.asyncTest("breezeRetrieve get collection int", sinon.test(function(assert) {
-      var col, r;
-      this.server.restore();
-      this.clock.restore();
-      col = [
-        {
-          "collections": [
-            {
-              "collection": "Batches",
-              "ids": [
-                {
-                  "Id": 1,
-                  "IdProperty": "Id",
-                  "ParameterGroups": [
-                    {
-                      "Name": "Collection:HistoryZone:Batches:12",
-                      "Parameters": [
-                        {
-                          "Name": "id",
-                          "Id": "id",
-                          "Values": [
-                            {
-                              "Name": "id",
-                              "Value": 1
-                            }
-                          ]
-                        }, {
-                          "Name": "order",
-                          "Id": "order",
-                          "Values": [
-                            {
-                              "Name": "propertyName",
-                              "Value": "Id"
-                            }, {
-                              "Name": "isDescending",
-                              "Value": false
-                            }
-                          ]
-                        }, {
-                          "Name": "filter",
-                          "Id": "filter",
-                          "Values": [
-                            {
-                              "Name": "property",
-                              "Value": "Id"
-                            }, {
-                              "Name": "operator",
-                              "Value": "<"
-                            }, {
-                              "Name": "value",
-                              "Value": "22"
-                            }
-                          ]
-                        }, {
-                          "Name": "page",
-                          "Id": "page",
-                          "Values": [
-                            {
-                              "Name": "page",
-                              "Value": "2"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ],
-          "type": "HistoryZone"
-        }
-      ];
-      r = breezeRetriever("history");
-      return setInterval(function() {
-        var promise;
-        return promise = r.getCollection(col);
-      }, 1000);
-    }));
     QUnit.test("joins called1", sinon.test(function(assert) {
       var joins, pr, promise, r, source;
       promise = {
@@ -445,21 +367,6 @@
       assert.equal(source.invoke.args[0][0], "join", "source  join");
       return assert.equal(source.invoke.args[0][2], joins, "joins");
     }));
-    QUnit.asyncTest("a little breeze", function(assert) {
-      var eq, manager, query, serviceName;
-      serviceName = "http://localhost:41374/breeze/configuration";
-      manager = new breeze.EntityManager(serviceName);
-      query = breeze.EntityQuery.from("Applications");
-      eq = manager.executeQuery(query);
-      eq.done(function(data) {
-        assert.ok('passed');
-        return QUnit.start();
-      });
-      return eq["catch"](function() {
-        assert.ok(false);
-        return QUnit.start();
-      });
-    });
     return QUnit.test("colelction joins called1", sinon.test(function(assert) {
       var collectionJoins, pr, promise, r, ret, source;
       promise = {

@@ -59,6 +59,12 @@
   <ItemGroup>
     <Content Include="packages.config" />
     <Content Include="Scripts\App\App.coffee" />
+    <Content Include="Scripts\App\BreezeEntityManagers.js">
+      <DependentUpon>BreezeEntityManagers.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\BreezeEntityManagers.min.js">
+      <DependentUpon>BreezeEntityManagers.coffee</DependentUpon>
+    </Content>
     <Content Include="Scripts\App\BreezeRetriever.js">
       <DependentUpon>BreezeRetriever.coffee</DependentUpon>
     </Content>
@@ -67,6 +73,7 @@
     </Content>
     <Content Include="Scripts\App\Retriever.coffee" />
     <Content Include="Scripts\App\BreezeRetriever.coffee" />
+    <Content Include="Scripts\App\BreezeEntityManagers.coffee" />
     <None Include="Scripts\jquery-2.1.1.intellisense.js" />
     <Content Include="Scripts\jquery-2.1.1.js" />
     <Content Include="Scripts\jquery-2.1.1.min.js" />
