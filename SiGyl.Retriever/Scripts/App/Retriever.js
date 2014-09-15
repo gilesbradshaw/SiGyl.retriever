@@ -1,76 +1,109 @@
 (function() {
-  define(["Q", "linq"], function(Q, linq) {
-    var Retriever, joinParser, rindex;
-    joinParser = 6;
+  define(["Q", "linq", "breezeretriever", "listener", "source", "observableExtensions"], function(Q, linq, breezeRetriever, listener, source, ObservableExtensions) {
+    var retriever, rindex;
     rindex = 0;
-    return Retriever = (function() {
-      function Retriever(source, store, listener) {
-        var rtDesc;
-        this.retrieve = function(tokens) {
-          var collectionJoins, deferred, i, joins, myRindex;
-          myRindex = rindex++;
-          deferred = Q.defer();
-          joins = linq.From(tokens).Aggregate([], function(a, b) {
-            if (b.retrieveRequestMerge) {
-              return b.retrieveRequestMerge(a);
-            } else {
-              return a;
+    retriever = {
+      retrieve: function(tokens) {
+        var collectionJoins, deferred, i, joins, myRindex;
+        myRindex = rindex++;
+        deferred = Q.defer();
+        joins = linq.From(tokens).Aggregate([], function(a, b) {
+          if (b.retrieveRequestMerge) {
+            return b.retrieveRequestMerge(a);
+          } else {
+            return a;
+          }
+        }) || [];
+        collectionJoins = linq.From(tokens).Aggregate([], function(a, b) {
+          if (b.collectionRetrieveRequestMerge) {
+            return b.collectionRetrieveRequestMerge(a);
+          } else {
+            return a;
+          }
+        }) || [];
+        i = source.getMe().invoke("join", myRindex++, joins, collectionJoins);
+        i["catch"](function(error) {
+          return deferred.reject(error);
+        });
+        i.done(function(x) {
+          var doBreeze;
+          doBreeze = Q.all([breezeRetriever.getMe().get(joins), breezeRetriever.getMe().getCollection(collectionJoins)]);
+          doBreeze["catch"](function(error) {
+            return deferred.rejectError;
+          });
+          return doBreeze.done(function(res) {
+            var r, r1, results, _i, _j, _len, _len1, _ref, _ref1;
+            results = [];
+            _ref = res[0];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              r = _ref[_i];
+              r1 = linq.From(res[1]).SingleOrDefault(void 0, function(rr) {
+                return rr.Type === r.Type;
+              });
+              if (r1) {
+                r.Ids = r.Ids || r1.Ids;
+                r.Collections = r.Collections || r1.Collections;
+              }
+              results.push(r);
             }
-          }) || [];
-          collectionJoins = linq.From(tokens).Aggregate([], function(a, b) {
-            if (b.collectionRetrieveRequestMerge) {
-              return b.collectionRetrieveRequestMerge(a);
-            } else {
-              return a;
+            _ref1 = res[1];
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              r = _ref1[_j];
+              if (!linq.From(res[0]).Any(function(rr) {
+                return rr.Type === r.Type;
+              })) {
+                results.push(r);
+              }
             }
-          }) || [];
-          i = source.invoke("join", myRindex++, joins, collectionJoins);
-          i["catch"](function(error) {
-            return deferred.reject(error);
+            return deferred.resolve(results);
           });
-          i.done(function(x) {
-            return deferred.resolve(store.mergeData(x));
-          });
-          return deferred.promise;
-        };
-        this.unlisten = function(unlistens, collectionUnlistens) {
-          var deferred, i;
-          deferred = Q.defer();
-          i = source.invoke("leave", unlistens, collectionUnlistens);
-          i.done(function(x) {
-            return deferred.resolve(x);
-          });
-          i["catch"](function(error) {
-            return deferred.reject(error);
-          });
-          i["finally"](function() {});
-          return deferred.promise;
-        };
-        rtDesc = 0;
-        source.on("change", (function(_this) {
+        });
+        return deferred.promise;
+      },
+      unlisten: function(unlistens, collectionUnlistens) {
+        var deferred, i;
+        deferred = Q.defer();
+        i = source.getMe().invoke("leave", unlistens, collectionUnlistens);
+        i.done(function(x) {
+          return deferred.resolve(x);
+        });
+        i["catch"](function(error) {
+          return deferred.reject(error);
+        });
+        i["finally"](function() {});
+        return deferred.promise;
+      }
+    };
+    return {
+      getMe: function() {
+        return retriever;
+      },
+      initMe: function(urls) {
+        breezeRetriever.initMe(urls);
+        rindex = 0;
+        source.initMe();
+        source.getMe().on("change", (function(_this) {
           return function(id, type, data) {
-            var changed;
-            if (changed = store.changeData(id, type, data)) {
-              listener.addData(_this, changed);
-              return listener.cycle();
-            }
+            return breezeRetriever.getMe().changeData(id, type, data).done(function(changed) {
+              if (changed) {
+                listener.getMe().addData(retriever, changed);
+                return listener.getMe().cycle();
+              }
+            });
           };
         })(this));
-        source.on("delete", (function(_this) {
+        return source.getMe().on("delete", (function(_this) {
           return function(id, type, data) {
-            var todelete;
-            todelete = store.deleteData(id, type, data);
-            if (todelete) {
-              listener.deleteData(_this, todelete);
-              return listener.cycle();
-            }
+            return breezeRetriever.getMe().deleteData(id, type, data).done(function(toDelete) {
+              if (toDelete) {
+                listener.getMe().deleteData(retriever, changed);
+              }
+              return listener.getMe().cycle();
+            });
           };
         })(this));
       }
-
-      return Retriever;
-
-    })();
+    };
   });
 
 }).call(this);

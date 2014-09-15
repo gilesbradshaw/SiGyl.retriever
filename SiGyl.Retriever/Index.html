@@ -5,7 +5,7 @@
 	<title>QUnit Example</title>
 	<script src="Scripts/qunit-1.15.0.js"></script>
 	<script src="Scripts/qunit-promises.js"></script>
-	<script data-main="/Scripts/App/App" type="text/javascript" src="/Scripts/require.js"></script>
+	<script data-main="/Scripts/Tests/App.Full" type="text/javascript" src="/Scripts/require.js"></script>
 	<link href="Css/qunit-1.15.0.css" rel="stylesheet" />
 
 </head>
@@ -16,22 +16,7 @@
 
 	<div id="qunit-fixture"></div>
 
-	<div style="display:none" data-bind="attr:{style:'display:block'}">
-		<input type="checkbox" data-bind="checked:hide" />
-		{{#nav:{'class':'root',topic:'roottopic'}}}
-			{{#nav:{'class':'child1',topic:'childtopic1'}}}
-				{{#ifnot:hide}}
-					{{#nav:{'class':'child2',topic:'childtopic2'}}}
-						{{#navcontent}}<div>some content {{topic}} <span data-bind="text:topic"></span></div>{{/navcontent}}
-					{{/nav}}
-				{{/ifnot}}
-			{{/nav}}
-			{{#nav:{'class':'child2',topic:'childtopic2'}}}
-			{{/nav}}
-		<nav-view params="nav:$nav"></nav-view>
-		{{/nav}}
-		
-	</div>
+	
 </body>
 
 </html>

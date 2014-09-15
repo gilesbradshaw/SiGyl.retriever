@@ -1,10 +1,27 @@
 (function() {
   define(["Q", "linq", "breeze", "knockout", "breezeEntityManagers"], function(Q, linq, breeze, ko, breezeEntityManagers) {
-    return {
-      get: function(joins) {
+    var breezeRetriever;
+    breezeRetriever = {
+      changeData: function(id, type, data) {
         var deferred;
         deferred = Q.defer();
         breezeEntityManagers.done(function(managers) {
+          return deferred.resolve(managers.getStore(join.type).changeData(id, type, data));
+        });
+        return deferred.promise;
+      },
+      deleteData: function(id, type, data) {
+        var deferred;
+        deferred = Q.defer();
+        breezeEntityManagers.done(function(managers) {
+          return deferred.resolve(managers.getStore(join.type).deleteData(id, type, data));
+        });
+        return deferred.promise;
+      },
+      get: function(joins) {
+        var deferred;
+        deferred = Q.defer();
+        breezeEntityManagers.getMe().done(function(managers) {
           var retrieves;
           retrieves = Q.all(linq.From(joins).Select(function(join) {
             var conditions, entityManager, eq, query, retrieveDeferred;
@@ -17,17 +34,21 @@
             query = query.where(breeze.Predicate.or(conditions));
             eq = entityManager.manager.executeQuery(query);
             eq.done(function(d) {
+              var store;
+              store = managers.getStore(join.type);
               return retrieveDeferred.resolve({
                 Type: join.type,
                 Ids: linq.From(d.results).Select(function(r) {
+                  var merged;
+                  merged = store.mergeData(join.type, r);
                   return {
-                    Key: r.Id(),
+                    Key: merged.Id(),
                     ParameterGroups: linq.From(linq.From(join.ids).Single(function(id) {
-                      return id.Id.toString() === r.Id().toString();
+                      return id.Id.toString() === merged.Id().toString();
                     }).ParameterGroups).Select(function(pg) {
                       return {
                         Name: pg.Name,
-                        Value: [r]
+                        Value: [merged]
                       };
                     }).ToArray()
                   };
@@ -51,7 +72,7 @@
       getCollection: function(collections) {
         var deferred;
         deferred = Q.defer();
-        breezeEntityManagers.done(function(managers) {
+        breezeEntityManagers.getMe().done(function(managers) {
           var retrieves;
           retrieves = Q.all(linq.From(collections).Select(function(type) {
             var collectionFetches, entityManager, retrieveDeferred;
@@ -164,6 +185,14 @@
           });
         });
         return deferred.promise;
+      }
+    };
+    return {
+      getMe: function() {
+        return breezeRetriever;
+      },
+      initMe: function(urls) {
+        return breezeEntityManagers.initMe(urls);
       }
     };
   });

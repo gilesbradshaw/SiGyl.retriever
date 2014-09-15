@@ -5,16 +5,27 @@
 			ko:'knockout'
 	shim:
 		breeze:['Q','jquery', 'knockout']
+		sinonie:['sinon']
 	paths:
 		linq:"linqjs-amd"
-		sinon:"sinon-1.9.1"
+		sinon:"sinon-1.10.3"
+		sinonie:"sinon-ie-1.10.3"
 		Q:"q"
 		jquery:"jquery-2.1.1"
 		retriever:"app/retriever"
 		breeze:"breeze.debug"
-		knockout:"knockout-3.2.0"
+		knockout:"knockout-3.2.0.debug"
 		breezeretriever:"App/BreezeRetriever"
 		breezeEntityManagers:"App/BreezeEntityManagers"
+		store:"App/store"
+		b64:"App/b64"
+		listener:"App/Listener"
+		source:"App/Source"
+		storeTemp:"App/storeTemp"
+		observableExtensions:"app/observableExtensions"
+		configurationMetaData:"App/metaData/configuration"
+		runtimeMetaData:"App/metaData/runtime"
+		historyMetaData:"App/metaData/history"
 
 
 require [
@@ -22,95 +33,84 @@ require [
 	"retriever"
 	"Q"
 	"breezeretriever"
+	"listener"
+	"source"
+	"storeTemp"
+	"configurationMetaData"
+	"runtimeMetaData"
+	"historyMetaData"
 	"sinon"
+	"sinonie"
 	
-], (linq,Retriever,Q,breezeRetriever)->
+], (linq,Retriever,Q,breezeRetriever,listener,source,storeTemp,configurationMetaData,runtimeMetaData,historyMetaData)->
 
 	QUnit.test "check linq", (assert)->
 		assert.ok linq, 'linq installed'
 	QUnit.test "check sinon", (assert)->
 		assert.ok sinon, 'sinon installed'
-	QUnit.test "handles change and delete data callbacks from source", sinon.test (assert)->
-		source=
-			"on":sinon.spy()
-		store=
-			changeData:sinon.stub().returns "stored data"
-			deleteData:sinon.stub().returns "deleted data"
-		listener=
-			addData:sinon.spy()
-			deleteData:sinon.spy()
-			cycle:sinon.spy()
-		r = new Retriever source, store, listener
-		assert.ok source["on"].calledTwice, "source on change and delete"
-
-		linq.From(source["on"].args).Single((a)->a[0]=="change")[1] "id", "type", "data"
-
-		assert.ok store.changeData.calledOnce, "store change data called"
-		assert.ok store.changeData.args[0][0] is "id" and store.changeData.args[0][1] is "type" and store.changeData.args[0][2] is "data", "correct data stored"
-		assert.ok listener.addData.calledOnce, "listener add data"
-		assert.ok listener.addData.args[0][0] is r
-		assert.ok listener.addData.args[0][1] is "stored data"
-		assert.ok listener.cycle.calledOnce
-
-		linq.From(source["on"].args).Single((a)->a[0]=="delete")[1] "id", "type", "data"
-
-		assert.ok store.deleteData.calledOnce, "store delete data called"
-		assert.ok store.deleteData.args[0][0] is "id" and store.deleteData.args[0][1] is "type" and store.deleteData.args[0][2] is "data", "correct data delete"
-		assert.ok listener.deleteData.calledOnce, "listener delete data"
-		assert.ok listener.deleteData.args[0][0] is r
-		assert.ok listener.deleteData.args[0][1] is "deleted data"
-		assert.ok listener.cycle.calledTwice
-
 
 	QUnit.asyncTest "if no tokens require fetching source join is not called", sinon.test (assert)->
 		promise =
 			done:@spy()
 			"catch":@spy()
 			finally:@spy()
-		source=
+		sourceStub=
 			"on":->
 			invoke:sinon.stub().returns promise
-		store=
-			mergeData:sinon.stub().returns "ok!!"
+		@stub source, "getMe", ->sourceStub
+		breezeDeferreds=
+			get:Q.defer()
+			getCollection:Q.defer()
+		stubbedBreezeRetriever=
+			get:@stub().returns breezeDeferreds.get.promise
+			getCollection:@stub().returns breezeDeferreds.getCollection.promise
+		@stub breezeRetriever, "getMe", ()->stubbedBreezeRetriever
+			
 		
-		r = new Retriever source, store, "listener"
+		r = Retriever.getMe()
 
 		pr = r.retrieve [
 				"token"
 				"token"
 			]
 		
+		
 
-		assert.ok source.invoke.calledOnce, "source invoke not called"
-		assert.equal source.invoke.args[0][0], "join", "source  join"
-		assert.equal source.invoke.args[0][2].length, 0, "no joins"
-		assert.equal source.invoke.args[0][3].length, 0, "no collection joins"
+		assert.ok sourceStub.invoke.calledOnce, "source invoke called"
+		assert.equal sourceStub.invoke.args[0][0], "join", "source  join"
+		assert.equal sourceStub.invoke.args[0][2].length, 0, "no joins"
+		assert.equal sourceStub.invoke.args[0][3].length, 0, "no collection joins"
 
 		promise.done.args[0][0] "result!"
+		assert.ok breezeRetriever.getMe().get.calledOnce, "breezeRetiever get called"
+		assert.ok breezeRetriever.getMe().getCollection.calledOnce, "breezeRetiever getCollection called"
+		
 		pr.done (x)->
-			assert.equal store.mergeData.args[0][0], "result!", "data merged"
-			assert.equal x, 'ok!!'
+			assert.equal x.length, 0
 			QUnit.start()
 		
+		breezeDeferreds.get.resolve []
+		breezeDeferreds.getCollection.resolve []
 
-		
-		
+
 	QUnit.asyncTest "source join fails result", sinon.test (assert)->
 		@clock.restore()
 		promise = 
 			done:@spy()
 			"catch":@spy()
-		source=
+			"yup":"!yup"
+		sourceStub=
 			"on":->
 			invoke:sinon.stub().returns promise
-		store=
+		@stub source, "getMe", ->sourceStub
+		storeStub=
 			mergeData:sinon.stub().returns "ok!!"
-		r = new Retriever source, store, "listener"
+		@stub storeTemp, "getMe",->storeStub
+		r = Retriever.getMe()
 		pr= r.retrieve []
 		pr.catch ()->
-			assert.ok !store.mergeData.called, "no data merged"
+			assert.ok !storeStub.mergeData.called, "no data merged"
 			QUnit.start()
-	
 		setTimeout(()->
 			promise["catch"].args[0][0] "failed"
 		100)
@@ -120,24 +120,25 @@ require [
 		promise = 
 			done:@spy()
 			"catch":@spy()
-		source=
+		sourceStub=
 			"on":->
 			invoke:sinon.stub().returns promise
-		r = new Retriever source, "store", "listener"
+		@stub source, "getMe", ->sourceStub
+		r = Retriever.getMe()
 
 		pr = r.retrieve [
-				retrieveRequestMerge:()->"join1:"
-				collectionRetrieveRequestMerge:()->"collectionjoin1:"
-			,
-				retrieveRequestMerge:(x)->x+ "join2"
-				collectionRetrieveRequestMerge:(x)->x+"collectionjoin2"
-			]
+			retrieveRequestMerge:()->"join1:"
+			collectionRetrieveRequestMerge:()->"collectionjoin1:"
+		,
+			retrieveRequestMerge:(x)->x+ "join2"
+			collectionRetrieveRequestMerge:(x)->x+"collectionjoin2"
+		]
 		
 
-		assert.ok source.invoke.calledOnce, "source invoke not called"
-		assert.equal source.invoke.args[0][0], "join", "source  join"
-		assert.equal source.invoke.args[0][2], "join1:join2", "joins"
-		assert.equal source.invoke.args[0][3], "collectionjoin1:collectionjoin2", "collection joins"
+		assert.ok sourceStub.invoke.calledOnce, "source invoke not called"
+		assert.equal sourceStub.invoke.args[0][0], "join", "source  join"
+		assert.equal sourceStub.invoke.args[0][2], "join1:join2", "joins"
+		assert.equal sourceStub.invoke.args[0][3], "collectionjoin1:collectionjoin2", "collection joins"
 
 
 	QUnit.asyncTest "unlistens called", sinon.test (assert)->
@@ -145,18 +146,19 @@ require [
 			done:@spy()
 			"catch":@spy()
 			finally:@spy()
-		source=
+		sourceStub=
 			"on":->
 			invoke:sinon.stub().returns promise
-		r = new Retriever source, "store", "listener"
+		@stub source, "getMe", ->sourceStub
+		r = Retriever.getMe()
 
 		pr = r.unlisten "unlistens", "collectionUnlistens"
 		
 
-		assert.ok source.invoke.calledOnce, "source invoke not called"
-		assert.equal source.invoke.args[0][0], "leave", "source  leave"
-		assert.equal source.invoke.args[0][1], "unlistens", "unlistens"
-		assert.equal source.invoke.args[0][2], "collectionUnlistens", "collectionUnlistens"
+		assert.ok sourceStub.invoke.calledOnce, "source invoke not called"
+		assert.equal sourceStub.invoke.args[0][0], "leave", "source  leave"
+		assert.equal sourceStub.invoke.args[0][1], "unlistens", "unlistens"
+		assert.equal sourceStub.invoke.args[0][2], "collectionUnlistens", "collectionUnlistens"
 		
 		promise["done"].args[0][0] "ok"
 
@@ -169,10 +171,11 @@ require [
 			done:@spy()
 			"catch":@spy()
 			finally:@spy()
-		source=
+		sourceStub=
 			"on":->
 			invoke:sinon.stub().returns promise
-		r = new Retriever source, "store", "listener"
+		@stub source, "getMe", ->sourceStub
+		r = Retriever.getMe()
 
 		pr = r.unlisten "unlistens", "collectionUnlistens"
 		
@@ -182,9 +185,19 @@ require [
 		pr["catch"] (x)->
 			assert.equal x, "nok"
 			QUnit.start()
-	QUnit.asyncTest "breezeRetrieve get",sinon.test (assert)->
-		@server.restore()
-		promise = breezeRetriever.get [
+	QUnit.asyncTest "breezeRetrieve get", (assert)->
+		server = sinon.fakeServer.create();
+		
+		
+
+		breezeRetriever.initMe [
+			"http://localhost:41374/breeze/configuration"
+		]
+		server.respondWith "GET", "http://localhost:41374/breeze/configuration/Metadata", JSON.stringify configurationMetaData.getMe()
+		server.respond()
+		server.respondWith "GET", "http://localhost:41374/breeze/configuration/Applications?$filter=Id%20eq%201", '[{"$id":"1","$type":"SiGyl.Models.Areas.Configuration.Sys.Application, SiGyl.Models.Areas.Configuration","Enterprises":null,"MyParentId":null,"Name":"7","Description":"e","Timestamp":{"$type":"System.Byte[], mscorlib","$value":"AAAAAAAGj7E="},"CreatedOn":"2012-11-27T14:39:17.217","ModifiedOn":"2014-08-23T00:24:55.067","UserIdCreated":null,"Exceptions":[],"Id":1}]'
+		
+		promise = breezeRetriever.getMe().get [
 			"ids":[
 				"Id":"1"
 				"ParameterGroups":[
@@ -202,6 +215,7 @@ require [
 			"type":"Application"
 					
 		]
+
 		promise.done (data)->
 			assert.ok data[0].Type is "Application", "application returned"
 			assert.ok data.length is 1 
@@ -211,16 +225,29 @@ require [
 			assert.ok data[0].Ids[0].ParameterGroups[0].Name is "Root:Application:0"
 			assert.ok data[0].Ids[0].ParameterGroups[0].Value.length is 1
 			assert.ok data[0].Ids[0].ParameterGroups[0].Value[0].Id() is 1
-			assert.ok data[0].Ids[0].ParameterGroups[0].Value[0].Timestamp() is "AAAAAAAGgBo="
+			assert.ok data[0].Ids[0].ParameterGroups[0].Value[0].Timestamp() is "AAAAAAAGj7E="
 
-
+			server.restore()
 			QUnit.start()
 		promise.catch ()->
 			assert.ok false, "retrieve failed"
+			server.restore()
 			QUnit.start()
-	QUnit.asyncTest "breezeRetrieve get collection",sinon.test (assert)->
-		@server.restore()
-		promise = breezeRetriever.getCollection [
+		setTimeout(()->
+			server.respond()
+		100)
+	QUnit.asyncTest "breezeRetrieve get collection", (assert)->
+		server = sinon.fakeServer.create();
+		breezeRetriever.initMe [
+			"http://localhost:41374/breeze/history"
+		]
+
+		server.respondWith "GET", "http://localhost:41374/breeze/history/Metadata", JSON.stringify historyMetaData.getMe()
+		server.respond()
+		
+		server.respondWith "GET", "http://localhost:41374/breeze/history/Batches?$filter=(ZoneId%20eq%201)%20and%20(Id%20lt%2022)&$orderby=Id&$skip=20&$top=10&$inlinecount=allpages", '{"$id":"1","$type":"Breeze.WebApi2.QueryResult, Breeze.WebApi2","Results":[{"$id":"2","$type":"SiGyl.Models.Areas.History.Batches.HistoryBatch, SiGyl.Models.Areas.History","ZoneId":1,"Zone":null,"FormulaId":1,"FormulaPath":"Self Check.DRY_SC10:1.0.DRY_SC10:1.0","UnitProcedures":null,"States":null,"MyParentId":1,"Commands":null,"RuntimeId":21,"Comment":null,"ConfigurationParentType":null,"ConfigurationParentId":1,"MyCommandId":null,"MyCommand":null,"Name":"gggg","Description":"Self Check Drying....bbb","Timestamp":{"$type":"System.Byte[], mscorlib","$value":"AAAAAAACIjk="},"CreatedOn":"2014-08-19T22:15:36.543","ModifiedOn":"2014-08-19T22:15:36.517","UserIdCreated":null,"Exceptions":[],"Id":21}],"InlineCount":21}'
+
+		promise = breezeRetriever.getMe().getCollection [
 			"collections":[
 				"collection":"Batches"
 				"ids":[
@@ -283,23 +310,26 @@ require [
 			#assert.ok data[0].Ids[0].ParameterGroups[0].Value[0].Id() is 1
 			#assert.ok data[0].Ids[0].ParameterGroups[0].Value[0].Timestamp() is "AAAAAAAGgBo="
 
-
+			server.restore()
 			QUnit.start()
 		promise.catch ()->
 			assert.ok false, "retrieve failed"
+			server.restore()
 			QUnit.start()
 
-		
+		setTimeout(()->
+			server.respond()
+		100)
 
 	QUnit.test "joins called1", sinon.test (assert)->
 		promise = 
 			done:@spy()
 			"catch":@spy()
-		source=
+		sourceStub=
 			"on":->
 			invoke:sinon.stub().returns promise
-		r = new Retriever source, "store", "listener"
-
+		@stub source, "getMe", ->sourceStub
+		r = Retriever.getMe()
 		joins = [
 			"ids":[
 				"Id":"1"
@@ -323,20 +353,21 @@ require [
 			]
 		
 
-		assert.ok source.invoke.calledOnce, "source invoke not called"
-		assert.equal source.invoke.args[0][0], "join", "source  join"
-		assert.equal source.invoke.args[0][2], joins, "joins"
+		assert.ok sourceStub.invoke.calledOnce, "source invoke not called"
+		assert.equal sourceStub.invoke.args[0][0], "join", "source  join"
+		assert.equal sourceStub.invoke.args[0][2], joins, "joins"
 
 
 
-	QUnit.test "colelction joins called1", sinon.test (assert)->
+	QUnit.test "collection joins called1", sinon.test (assert)->
 		promise = 
 			done:@spy()
 			"catch":@spy()
-		source=
+		sourceStub=
 			"on":->
 			invoke:sinon.stub().returns promise
-		r = new Retriever source, "store", "listener"
+		@stub source, "getMe", ->sourceStub
+		r = Retriever.getMe()
 
 		collectionJoins = [
 			"collections":[
@@ -394,9 +425,9 @@ require [
 			]
 		
 
-		assert.ok source.invoke.calledOnce, "source invoke not called"
-		assert.equal source.invoke.args[0][0], "join", "source  join"
-		assert.equal source.invoke.args[0][3], collectionJoins, "collectionJoins"
+		assert.ok sourceStub.invoke.calledOnce, "source invoke not called"
+		assert.equal sourceStub.invoke.args[0][0], "join", "source  join"
+		assert.equal sourceStub.invoke.args[0][3], collectionJoins, "collectionJoins"
 
 		ret = [
 			"Type":"HistoryZone"

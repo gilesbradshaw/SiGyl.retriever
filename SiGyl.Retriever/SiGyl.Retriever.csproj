@@ -57,8 +57,163 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="BreezeEntityManagers.html" />
+    <Content Include="BreezeRetriever.html" />
+    <Content Include="ListenToken.html" />
+    <Content Include="Scripts\App\Listener.js">
+      <DependentUpon>Listener.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\Listener.min.js">
+      <DependentUpon>Listener.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ListenToken.js">
+      <DependentUpon>ListenToken.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ListenToken.min.js">
+      <DependentUpon>ListenToken.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Base.js">
+      <DependentUpon>Base.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Base.min.js">
+      <DependentUpon>Base.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Extender.js">
+      <DependentUpon>Extender.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Extender.min.js">
+      <DependentUpon>Extender.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Filter.js">
+      <DependentUpon>Filter.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Filter.min.js">
+      <DependentUpon>Filter.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Listener.js">
+      <DependentUpon>Listener.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Listener.min.js">
+      <DependentUpon>Listener.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\MixinTo.js">
+      <DependentUpon>MixinTo.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\MixinTo.min.js">
+      <DependentUpon>MixinTo.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\ObservableExtensions.js">
+      <DependentUpon>ObservableExtensions.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\ObservableExtensions.min.js">
+      <DependentUpon>ObservableExtensions.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Order.js">
+      <DependentUpon>Order.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Order.min.js">
+      <DependentUpon>Order.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Page.js">
+      <DependentUpon>Page.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Page.min.js">
+      <DependentUpon>Page.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Select.js">
+      <DependentUpon>Select.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Select.min.js">
+      <DependentUpon>Select.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\SelectMany.js">
+      <DependentUpon>SelectMany.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\SelectMany.min.js">
+      <DependentUpon>SelectMany.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\SelectSingle.js">
+      <DependentUpon>SelectSingle.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\SelectSingle.min.js">
+      <DependentUpon>SelectSingle.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Title.js">
+      <DependentUpon>Title.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions\Title.min.js">
+      <DependentUpon>Title.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.BreezeEntityManagers.js">
+      <DependentUpon>App.BreezeEntityManagers.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.BreezeEntityManagers.min.js">
+      <DependentUpon>App.BreezeEntityManagers.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.BreezeRetriever.js">
+      <DependentUpon>App.BreezeRetriever.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.BreezeRetriever.min.js">
+      <DependentUpon>App.BreezeRetriever.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Full.js">
+      <DependentUpon>App.Full.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Full.min.js">
+      <DependentUpon>App.Full.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Listener.js">
+      <DependentUpon>App.Listener.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Listener.min.js">
+      <DependentUpon>App.Listener.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.ListenToken.js">
+      <DependentUpon>App.ListenToken.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.ListenToken.min.js">
+      <DependentUpon>App.ListenToken.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.ObservableExtensions.js">
+      <DependentUpon>App.ObservableExtensions.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.ObservableExtensions.min.js">
+      <DependentUpon>App.ObservableExtensions.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Retriever.js">
+      <DependentUpon>App.Retriever.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Retriever.min.js">
+      <DependentUpon>App.Retriever.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Source.js">
+      <DependentUpon>App.Source.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Source.min.js">
+      <DependentUpon>App.Source.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Store.js">
+      <DependentUpon>App.Store.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.Store.min.js">
+      <DependentUpon>App.Store.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\metaData\history.js" />
+    <Content Include="Scripts\Tests\metaData\runtime.js" />
+    <Content Include="Scripts\Tests\metaData\configuration.js" />
+    <Content Include="Scripts\sinon-1.10.3.js" />
+    <Content Include="Scripts\sinon-ie-1.10.3.js" />
+    <Content Include="Retriever.html" />
+    <Content Include="Listener.html" />
+    <Content Include="Store.html" />
     <Content Include="packages.config" />
-    <Content Include="Scripts\App\App.coffee" />
+    <Content Include="Scripts\Tests\App.coffee" />
+    <Content Include="Scripts\App\b64.js">
+      <DependentUpon>b64.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\b64.min.js">
+      <DependentUpon>b64.coffee</DependentUpon>
+    </Content>
     <Content Include="Scripts\App\BreezeEntityManagers.js">
       <DependentUpon>BreezeEntityManagers.coffee</DependentUpon>
     </Content>
@@ -71,13 +226,58 @@
     <Content Include="Scripts\App\BreezeRetriever.min.js">
       <DependentUpon>BreezeRetriever.coffee</DependentUpon>
     </Content>
+    <Content Include="Scripts\App\ObservableExtensions.js">
+      <DependentUpon>ObservableExtensions.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\ObservableExtensions.min.js">
+      <DependentUpon>ObservableExtensions.coffee</DependentUpon>
+    </Content>
     <Content Include="Scripts\App\Retriever.coffee" />
     <Content Include="Scripts\App\BreezeRetriever.coffee" />
     <Content Include="Scripts\App\BreezeEntityManagers.coffee" />
+    <Content Include="Scripts\App\Source.js">
+      <DependentUpon>Source.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\Source.min.js">
+      <DependentUpon>Source.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\Store.coffee" />
+    <Content Include="Scripts\App\b64.coffee" />
+    <Content Include="Scripts\App\Source.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions.coffee" />
+    <Content Include="Scripts\Tests\App.Store.coffee" />
+    <Content Include="Scripts\Tests\App.Retriever.coffee" />
+    <Content Include="Scripts\Tests\App.BreezeRetriever.coffee" />
+    <Content Include="Scripts\Tests\App.Source.coffee" />
+    <Content Include="Scripts\Tests\App.ObservableExtensions.coffee" />
+    <Content Include="Scripts\Tests\App.Listener.coffee" />
+    <Content Include="Scripts\App\Listener.coffee" />
+    <Content Include="Scripts\App\ListenToken.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Base.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Extender.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Filter.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Listener.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\MixinTo.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\ObservableExtensions.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Order.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Page.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Select.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\SelectMany.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\SelectSingle.coffee" />
+    <Content Include="Scripts\App\ObservableExtensions\Title.coffee" />
     <None Include="Scripts\jquery-2.1.1.intellisense.js" />
+    <Content Include="Scripts\App\Store.js">
+      <DependentUpon>Store.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\Store.min.js">
+      <DependentUpon>Store.coffee</DependentUpon>
+    </Content>
     <Content Include="Scripts\jquery-2.1.1.js" />
     <Content Include="Scripts\jquery-2.1.1.min.js" />
     <Content Include="Scripts\jquery-2.1.1.min.map" />
+    <Content Include="Scripts\Tests\App.BreezeEntityManagers.coffee" />
+    <Content Include="Scripts\Tests\App.ListenToken.coffee" />
+    <Content Include="Scripts\Tests\App.Full.coffee" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -87,10 +287,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Index.html" />
-    <Content Include="Scripts\App\App.js">
+    <Content Include="Scripts\Tests\App.js">
       <DependentUpon>App.coffee</DependentUpon>
     </Content>
-    <Content Include="Scripts\App\App.min.js">
+    <Content Include="Scripts\Tests\App.min.js">
       <DependentUpon>App.coffee</DependentUpon>
     </Content>
     <Content Include="Scripts\App\Retriever.js">
