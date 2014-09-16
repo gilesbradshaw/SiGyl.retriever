@@ -33,7 +33,7 @@ define [
 				joins
 				collectionJoins
 			)
-			i.catch (error)-> 
+			i.fail (error)-> 
 				deferred.reject(error)
 			i.done (x)->
 				doBreeze= Q.all [
@@ -73,13 +73,13 @@ define [
 
 		rindex=0
 		source.initMe()
-		source.getMe().on "change", (id,type,data)=>
+		source.getMe().on "change", (id,type,data)->
 			breezeRetriever.getMe().changeData(id,type,data).done (changed)->
 				if changed
 					listener.getMe().addData retriever, changed
 					listener.getMe().cycle()
 
-		source.getMe().on "delete", (id,type,data)=>
+		source.getMe().on "delete", (id,type,data)->
 			breezeRetriever.getMe().deleteData(id,type,data).done (toDelete)->
 				if toDelete
 					listener.getMe().deleteData retriever, changed

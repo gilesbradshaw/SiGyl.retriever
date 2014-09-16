@@ -12,13 +12,13 @@ define [
 		
 		changeData:(id,type,data)->
 			deferred = Q.defer()
-			breezeEntityManagers.done (managers)->
-				deferred.resolve managers.getStore(join.type).changeData id,type,data
+			breezeEntityManagers.getMe().done (managers)->
+				deferred.resolve managers.getStore(type.split('.')[0]).changeData id,type,data
 			deferred.promise
 		deleteData:(id,type,data)->
 			deferred = Q.defer()
-			breezeEntityManagers.done (managers)->
-				deferred.resolve managers.getStore(join.type).deleteData id,type,data
+			breezeEntityManagers.getMe().done (managers)->
+				deferred.resolve managers.getStore(type.split('.')[0]).deleteData id,type,data
 			deferred.promise
 
 		get:(joins)->

@@ -22,7 +22,7 @@
           }
         }) || [];
         i = source.getMe().invoke("join", myRindex++, joins, collectionJoins);
-        i["catch"](function(error) {
+        i.fail(function(error) {
           return deferred.reject(error);
         });
         i.done(function(x) {
@@ -82,26 +82,22 @@
         breezeRetriever.initMe(urls);
         rindex = 0;
         source.initMe();
-        source.getMe().on("change", (function(_this) {
-          return function(id, type, data) {
-            return breezeRetriever.getMe().changeData(id, type, data).done(function(changed) {
-              if (changed) {
-                listener.getMe().addData(retriever, changed);
-                return listener.getMe().cycle();
-              }
-            });
-          };
-        })(this));
-        return source.getMe().on("delete", (function(_this) {
-          return function(id, type, data) {
-            return breezeRetriever.getMe().deleteData(id, type, data).done(function(toDelete) {
-              if (toDelete) {
-                listener.getMe().deleteData(retriever, changed);
-              }
+        source.getMe().on("change", function(id, type, data) {
+          return breezeRetriever.getMe().changeData(id, type, data).done(function(changed) {
+            if (changed) {
+              listener.getMe().addData(retriever, changed);
               return listener.getMe().cycle();
-            });
-          };
-        })(this));
+            }
+          });
+        });
+        return source.getMe().on("delete", function(id, type, data) {
+          return breezeRetriever.getMe().deleteData(id, type, data).done(function(toDelete) {
+            if (toDelete) {
+              listener.getMe().deleteData(retriever, changed);
+            }
+            return listener.getMe().cycle();
+          });
+        });
       }
     };
   });

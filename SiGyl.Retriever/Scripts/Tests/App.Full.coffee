@@ -6,15 +6,18 @@
 	shim:
 		breeze:['Q','jquery', 'knockout']
 		sinonie:['sinon']
+		sigr: ["jquery"]
 	paths:
 		linq:"linqjs-amd"
 		sinon:"sinon-1.10.3"
 		sinonie:"sinon-ie-1.10.3"
 		Q:"q"
 		jquery:"jquery-2.1.1"
+		sigr: "jquery.signalR-2.1.2"
 		retriever:"app/retriever"
 		breeze:"breeze.debug"
 		knockout:"knockout-3.2.0.debug"
+		"knockout.punches":"knockout.punches"
 		breezeretriever:"App/BreezeRetriever"
 		breezeEntityManagers:"App/BreezeEntityManagers"
 		store:"App/store"
@@ -41,15 +44,18 @@
 
 
 require [
+	"knockout"
 	"linq"
 	"retriever"
 	"Q"
 	"source"
 	"sinonie"
+	"knockout.punches"
 	
 	
-], (linq,Retriever,Q,source)->
+], (ko,linq,Retriever,Q,source)->
 
+	ko.punches.enableAll()
 	QUnit.asyncTest "check linq", (assert)->
 		sandbox= sinon.sandbox.create()
 		
@@ -59,12 +65,6 @@ require [
 			"http://localhost:41374/breeze/history"
 		]
 
-
-		s= source.getMe()
-		sourceDefer = undefined
-		sandbox.stub s, "invoke", ->
-			sourceDefer = Q.defer()
-			sourceDefer.promise 
 
 		r= Retriever.getMe()
 
@@ -89,11 +89,10 @@ require [
 		]
 
 		pr.done (x)->
+			ko.applyBindings x[0].Ids[0].ParameterGroups[0].Value[0]
 			hello = x[0].Ids[0].ParameterGroups[0].Value[0].Enterprises.any()()
 			hello.subscribe (xx)->
 				assert.ok true
 				sandbox.restore()
 				QUnit.start()
-			sourceDefer.resolve()
-		sourceDefer.resolve()
-	
+		

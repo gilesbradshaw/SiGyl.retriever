@@ -5,16 +5,16 @@
       changeData: function(id, type, data) {
         var deferred;
         deferred = Q.defer();
-        breezeEntityManagers.done(function(managers) {
-          return deferred.resolve(managers.getStore(join.type).changeData(id, type, data));
+        breezeEntityManagers.getMe().done(function(managers) {
+          return deferred.resolve(managers.getStore(type.split('.')[0]).changeData(id, type, data));
         });
         return deferred.promise;
       },
       deleteData: function(id, type, data) {
         var deferred;
         deferred = Q.defer();
-        breezeEntityManagers.done(function(managers) {
-          return deferred.resolve(managers.getStore(join.type).deleteData(id, type, data));
+        breezeEntityManagers.getMe().done(function(managers) {
+          return deferred.resolve(managers.getStore(type.split('.')[0]).deleteData(id, type, data));
         });
         return deferred.promise;
       },
