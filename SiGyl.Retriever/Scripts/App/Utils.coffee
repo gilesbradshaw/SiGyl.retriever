@@ -1,5 +1,5 @@
 ﻿# CoffeeScript
-define ["linq"],(linq)->
+define ["linq","Q"],(linq,Q)->
 	utils=
 		process:(object, func)->
 			if object 
@@ -43,6 +43,6 @@ define ["linq"],(linq)->
 				end:()->linq.From(association.end).Single((e)->e.role == referentialConstraint.role)
 				type:()->ret.end().type.split('.')[2]
 				entityType:()->entityType.model.entityTypes[ret.type()]
-	initMe:->
+	initMe:->Q()
 	getMe:->utils
 				

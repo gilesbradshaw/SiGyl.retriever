@@ -8,6 +8,9 @@
 		sinonie:['sinon']
 		sigr: ["jquery"]
 	paths:
+		rx:"rx"
+		"rx.joinpatterns":"rx.joinpatterns"
+		"knockout.rx":"knockout.rx"
 		linq:"linqjs-amd"
 		sinon:"sinon-1.10.3"
 		sinonie:"sinon-ie-1.10.3"
@@ -17,6 +20,7 @@
 		retriever:"app/retriever"
 		breeze:"breeze.debug"
 		knockout:"knockout-3.2.0.debug"
+		"knockout.mapping":"knockout.mapping-latest"
 		"knockout.punches":"knockout.punches"
 		breezeretriever:"App/BreezeRetriever"
 		breezeEntityManagers:"App/BreezeEntityManagers"
@@ -49,54 +53,42 @@ require [
 	"linq"
 	"retriever"
 	"Q"
-	"source"
+	"observableExtensions"
+	"rx"
+	"rx.joinpatterns"
+	"knockout.rx"
 	"sinonie"
 	"knockout.punches"
+
 	
 	
-], (ko,linq,Retriever,Q,source)->
+], (ko,linq,Retriever,Q,observableExtensions,rx)->
 
 	ko.punches.enableAll()
-	QUnit.asyncTest "check linq", (assert)->
+	QUnit.asyncTest "fetch and subscribe to data", (assert)->
 		sandbox= sinon.sandbox.create()
-		
-		Retriever.initMe [
+		expect 0
+		Retriever.initMe( [
 			"http://localhost:41374/breeze/configuration"
 			"http://localhost:41374/breeze/runtime"
 			"http://localhost:41374/breeze/history"
-		]
+		]).done ()->
 
+			ro = observableExtensions.getMe().modelExtensions.ConfigurationContext.rootObservable 1, "Enterprise", true
 
-		r= Retriever.getMe()
+			ro.subscribe (value)->
 
-		pr = r.retrieve [
-			retrieveRequestMerge:()->[
-				"ids":[
-					"Id":"1"
-					"ParameterGroups":[
-						"Name":"Root:Enterprise:0"
-						"Parameters":[
-							"Name":"id"
-							"Id":"id"
-							"Values":[
-								"Name":"id"
-								"Value":"1"
-							]
-						]
-					]
-				]
-				"type":"Enterprise"
-			]
-		]
+				koSites=value.Sites.any()() #an observablearray of sites
+				koApplication = value.Application #observable of application
 
-		pr.done (x)->
-			value= x[0].Ids[0].ParameterGroups[0].Value[0]
-			ko.applyBindings value
-			sites = value.Sites.any()()
-			sites.subscribe (xx)->
-				application = value.Application
-				application.subscribe ()->
-					assert.ok true
+				sites = koSites.toObservableWithReplyLatest().where((x)->x)
+				application = koApplication.toObservableWithReplyLatest().where((x)->x)
+				both = rx.Observable.when (sites.and application).thenDo (site, application)->
+					site:site,
+					application:application
+				both.subscribe (xx)->
 					sandbox.restore()
+					ko.applyBindings value
 					QUnit.start()
-		
+						
+

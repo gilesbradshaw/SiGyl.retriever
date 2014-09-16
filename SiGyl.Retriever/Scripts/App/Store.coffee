@@ -1,21 +1,15 @@
 
 define [
 	"knockout"
+	"knockout.mapping"
 	"b64"
 	"linq"
 	"observableExtensions"
 	"utils"
-],(ko,b64,linq,observableExtensionsMain,utils) ->
+	"Q"
+],(ko,mapping,b64,linq,observableExtensionsMain,utils,Q) ->
 
 
-
-
-	
-	collectionType=(conceptualModel,entityType,collection)->
-		collectionNavigationProperty = linq.From(entityType.navigationProperties).SingleOrDefault((x)->x.Key==collection).Value
-		association=conceptualModel.associations[collectionNavigationProperty.relationship.split('.')[1]]
-		toEnd= linq.From(association.end).Single((e)->e.role is collectionNavigationProperty.toRole)
-		conceptualModel.entityTypes[toEnd.type.split('.')[2]]
 	updateEntity=(entityType, from, _to)->
 		utils.getMe().process entityType.property, (property)=>
 			if (property.name of from)
@@ -106,11 +100,11 @@ define [
 									parameterGroup.Collection.data = result
 				data
 			@changeData=(id,type,value)=>
-				
+				value = mapping.fromJS value
 				entityType = conceptualModel.entityTypes[type.split('.')[0]]
 				if entityType
 					if type.split('.').length is 2
-						entityType = collectionType conceptualModel, entityType, type.split('.')[1]
+						entityType = utils.getMe().getDependent(entityType,type.split('.')[1]).entityType()
 					key = getKey entityType, value
 					currentValue = entityType.data[key] || (entityType.data[key] = newEntity(value,conceptualModel,entityType,modelExtensions))
 					if !b64.compare ko.utils.unwrapObservable(value.Timestamp), ko.utils.unwrapObservable(currentValue.Timestamp)
@@ -126,7 +120,7 @@ define [
 				entityType = conceptualModel.entityTypes[type.split('.')[0]]
 				if entityType
 					if type.split('.').length is 2
-						entityType = collectionType conceptualModel, entityType, type.split('.')[1]
+						entityType = utils.getMe().getDependent(entityType,type.split('.')[1]).entityType()
 						
 					
 					key = getKey entityType, value
@@ -137,5 +131,5 @@ define [
 					type:type
 					value:currentValue
 					
-	initMe:->
+	initMe:->Q()
 	getMe:->Store

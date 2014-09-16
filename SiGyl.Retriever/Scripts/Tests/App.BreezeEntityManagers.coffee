@@ -14,6 +14,7 @@
 		jquery:"jquery-2.1.1"
 		breeze:"breeze.debug"
 		knockout:"knockout-3.2.0.debug"
+		"knockout.mapping":"knockout.mapping-latest"
 		breezeEntityManagers:"App/BreezeEntityManagers"
 		observableExtensions:"app/observableExtensions"
 		configurationMetaData:"tests/metaData/configuration"

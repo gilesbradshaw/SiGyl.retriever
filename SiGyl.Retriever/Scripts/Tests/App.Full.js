@@ -12,6 +12,9 @@
       sigr: ["jquery"]
     },
     paths: {
+      rx: "rx",
+      "rx.joinpatterns": "rx.joinpatterns",
+      "knockout.rx": "knockout.rx",
       linq: "linqjs-amd",
       sinon: "sinon-1.10.3",
       sinonie: "sinon-ie-1.10.3",
@@ -21,6 +24,7 @@
       retriever: "app/retriever",
       breeze: "breeze.debug",
       knockout: "knockout-3.2.0.debug",
+      "knockout.mapping": "knockout.mapping-latest",
       "knockout.punches": "knockout.punches",
       breezeretriever: "App/BreezeRetriever",
       breezeEntityManagers: "App/BreezeEntityManagers",
@@ -48,57 +52,34 @@
     }
   });
 
-  require(["knockout", "linq", "retriever", "Q", "source", "sinonie", "knockout.punches"], function(ko, linq, Retriever, Q, source) {
+  require(["knockout", "linq", "retriever", "Q", "observableExtensions", "rx", "rx.joinpatterns", "knockout.rx", "sinonie", "knockout.punches"], function(ko, linq, Retriever, Q, observableExtensions, rx) {
     ko.punches.enableAll();
-    return QUnit.asyncTest("check linq", function(assert) {
-      var pr, r, sandbox;
+    return QUnit.asyncTest("fetch and subscribe to data", function(assert) {
+      var sandbox;
       sandbox = sinon.sandbox.create();
-      Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]);
-      r = Retriever.getMe();
-      pr = r.retrieve([
-        {
-          retrieveRequestMerge: function() {
-            return [
-              {
-                "ids": [
-                  {
-                    "Id": "1",
-                    "ParameterGroups": [
-                      {
-                        "Name": "Root:Enterprise:0",
-                        "Parameters": [
-                          {
-                            "Name": "id",
-                            "Id": "id",
-                            "Values": [
-                              {
-                                "Name": "id",
-                                "Value": "1"
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ],
-                "type": "Enterprise"
-              }
-            ];
-          }
-        }
-      ]);
-      return pr.done(function(x) {
-        var sites, value;
-        value = x[0].Ids[0].ParameterGroups[0].Value[0];
-        ko.applyBindings(value);
-        sites = value.Sites.any()();
-        return sites.subscribe(function(xx) {
-          var application;
-          application = value.Application;
-          return application.subscribe(function() {
-            assert.ok(true);
+      expect(0);
+      return Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).done(function() {
+        var ro;
+        ro = observableExtensions.getMe().modelExtensions.ConfigurationContext.rootObservable(1, "Enterprise", true);
+        return ro.subscribe(function(value) {
+          var application, both, koApplication, koSites, sites;
+          koSites = value.Sites.any()();
+          koApplication = value.Application;
+          sites = koSites.toObservableWithReplyLatest().where(function(x) {
+            return x;
+          });
+          application = koApplication.toObservableWithReplyLatest().where(function(x) {
+            return x;
+          });
+          both = rx.Observable.when((sites.and(application)).thenDo(function(site, application) {
+            return {
+              site: site,
+              application: application
+            };
+          }));
+          return both.subscribe(function(xx) {
             sandbox.restore();
+            ko.applyBindings(value);
             return QUnit.start();
           });
         });

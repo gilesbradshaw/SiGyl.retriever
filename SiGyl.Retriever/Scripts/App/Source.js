@@ -1,14 +1,11 @@
 (function() {
-  define(["jquery", "sigr"], function($) {
-    var crossConnection, crossProxy, hubStart, source;
+  define(["jquery", "Q", "sigr"], function($, Q) {
+    var crossConnection, crossProxy, source;
     crossConnection = $.hubConnection("http://localhost:41374/");
     crossProxy = crossConnection.createHubProxy("superBatch");
-    hubStart = crossConnection.start();
     source = {
       invoke: function(method, rindex, joins, collectionJoins) {
-        return hubStart.then(function() {
-          return crossProxy.invoke(method, rindex, joins, collectionJoins);
-        });
+        return crossProxy.invoke(method, rindex, joins, collectionJoins);
       },
       "on": function(event, callback) {
         return crossProxy.on(event, callback);
@@ -18,7 +15,9 @@
       getMe: function() {
         return source;
       },
-      initMe: function() {}
+      initMe: function() {
+        return crossConnection.start();
+      }
     };
   });
 

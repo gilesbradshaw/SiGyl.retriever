@@ -15,6 +15,7 @@
 		retriever:"app/retriever"
 		breeze:"breeze.debug"
 		knockout:"knockout-3.2.0.debug"
+		"knockout.mapping":"knockout.mapping-latest"
 		breezeretriever:"App/BreezeRetriever"
 		breezeEntityManagers:"App/BreezeEntityManagers"
 		store:"App/store"

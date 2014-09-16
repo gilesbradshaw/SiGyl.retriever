@@ -67,7 +67,7 @@
         i.done(function(x) {
           return deferred.resolve(x);
         });
-        i["catch"](function(error) {
+        i.fail(function(error) {
           return deferred.reject(error);
         });
         i["finally"](function() {});
@@ -79,23 +79,25 @@
         return retriever;
       },
       initMe: function(urls) {
-        breezeRetriever.initMe(urls);
-        rindex = 0;
-        source.initMe();
-        source.getMe().on("change", function(id, type, data) {
-          return breezeRetriever.getMe().changeData(id, type, data).done(function(changed) {
-            if (changed) {
-              listener.getMe().addData(retriever, changed);
-              return listener.getMe().cycle();
-            }
-          });
-        });
-        return source.getMe().on("delete", function(id, type, data) {
-          return breezeRetriever.getMe().deleteData(id, type, data).done(function(toDelete) {
-            if (toDelete) {
-              listener.getMe().deleteData(retriever, changed);
-            }
-            return listener.getMe().cycle();
+        return breezeRetriever.initMe(urls).then(function() {
+          rindex = 0;
+          return source.initMe().then(function() {
+            source.getMe().on("change", function(id, type, data) {
+              return breezeRetriever.getMe().changeData(id, type, data).done(function(changed) {
+                if (changed) {
+                  listener.getMe().addData(retriever, changed);
+                  return listener.getMe().cycle();
+                }
+              });
+            });
+            return source.getMe().on("delete", function(id, type, data) {
+              return breezeRetriever.getMe().deleteData(id, type, data).done(function(toDelete) {
+                if (toDelete) {
+                  listener.getMe().deleteData(retriever, toDelete);
+                }
+                return listener.getMe().cycle();
+              });
+            });
           });
         });
       }

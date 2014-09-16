@@ -15,6 +15,7 @@
       linq: "linqjs-amd",
       sinon: "sinon-1.9.1",
       knockout: "knockout-3.2.0.debug",
+      "knockout.mapping": "knockout.mapping-latest",
       store: "App/store",
       b64: "App/b64",
       configurationMetaData: "tests/metaData/configuration",

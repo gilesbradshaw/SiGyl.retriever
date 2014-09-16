@@ -80,7 +80,7 @@ define [
 			
 				@manyObservable = (data, type, collection, entityType) =>
 					baseObservable()
-					.entityType(()->conceptualModel.entities[linq.From(entityType.navigationProperties).Single((x)->x.name is collection).to.type])
+					.entityType(utils.getMe().getDependent(entityType, collection).entityType)
 					.getListenToken((observable)->
 						#this uniquely identifies this retrieval
 						myKey="Collection:#{type}:#{collection}:#{parameterGroupId++}"
@@ -90,7 +90,7 @@ define [
 						listenToken.canAddData= (addData, completeData)=>
 							if addData.value
 								if addData.type is "#{type}.#{collection}"
-									if data.Id() is addData.value[linq.From(entityType.navigationProperties).Single((x)->x.name is collection).to.referentialConstraints[0].to[0]]() 
+									if data.Id() is addData.value[utils.getMe().getDependent(entityType, collection).id()]() 
 										return true
 								
 						listenToken.addData = (addData)=>
@@ -111,7 +111,7 @@ define [
 						listenToken.deleteData = (deleteData)=>
 							if deleteData.value
 								if deleteData.type is "#{type}.#{collection}"
-									if data.Id() is deleteData.value[linq.From(entityType.navigationProperties).Single((x)->x.name is collection).to.referentialConstraints[0].to[0]]() 
+									if data.Id() is deleteData.value[utils.getMe().getDependent(entityType, collection).id()]() 
 										listenToken.data.remove deleteData.value
 						listenToken.getProcessMetaData (metaData)->
 							listenToken.metaData=metaData
@@ -347,7 +347,6 @@ define [
 					relationObserve retriever, idObservable, '.', type, conceptualModel.entities[type], entityTypeFunc, "Self"
 
 				@singleObservable = (data, property, entityType) =>
-					navigationProperty = entityType.navigationProperties[property]
 					principal = utils.getMe().getPrincipal entityType, property
 					idObservable = data[principal.id()]
 					relationObserve retriever, idObservable, property, principal.type(), entityType, principal.entityType, "Single"
@@ -487,4 +486,5 @@ define [
 
 	getMe:->ObservableExtensions
 	initMe:->
-			ObservableExtensions.modelExtensions={}
+		ObservableExtensions.modelExtensions={}
+		Q()

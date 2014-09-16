@@ -236,3 +236,4 @@ define [
 		completing=false
 		if completeTimer
 			clearTimeout completeTimer
+		Q()

@@ -25,18 +25,16 @@ define [
 	deferred =undefined
 	
 	initMe:(metaDataUrls)->
-		ObservableExtensions.initMe()
-		deferred= Q.defer()
-		entityManagers = Q.all linq.From(metaDataUrls).Select((url)->getMetaData url).ToArray() 
-		entityManagers.done (managers)->
-			creates=[]
-			for manager in managers
-				manager.store = new (Store.getMe()) utils.getMe().processModel manager.metaData.schema
-				creates.push ObservableExtensions.getMe().create manager.metaData.schema.entityContainer.name, manager.metaData.schema
-			Q.all(creates).done ()->
-				getManager=(type)->
-					linq.From(managers).Single((m)-> linq.From(m.metaData.schema.entityContainer.entitySet).SingleOrDefault(undefined,(eset)-> eset.entityType is "Self.#{type}"))
-				deferred.resolve
+		deferred = ObservableExtensions.initMe().then ()->
+			entityManagers = Q.all linq.From(metaDataUrls).Select((url)->getMetaData url).ToArray() 
+			entityManagers.then (managers)->
+				creates=[]
+				for manager in managers
+					manager.store = new (Store.getMe()) utils.getMe().processModel manager.metaData.schema
+					creates.push ObservableExtensions.getMe().create manager.metaData.schema.entityContainer.name, manager.metaData.schema
+				Q.all(creates).then ()->
+					getManager=(type)->
+						linq.From(managers).Single((m)-> linq.From(m.metaData.schema.entityContainer.entitySet).SingleOrDefault(undefined,(eset)-> eset.entityType is "Self.#{type}"))
 					getStore:(type)->
 						getManager(type).store
 					getType:(type)->
@@ -55,8 +53,7 @@ define [
 							collectionEntityContainer = linq.From(manager.metaData.schema.entityContainer.entitySet).Single((eset)-> eset.entityType.split('.')[1] is dependent.type()).name
 							query:(id)->breeze.EntityQuery.from(collectionEntityContainer).inlineCount().where dependent.id(), '==', id
 
-		entityManagers.catch ()->
-			deferred.reject()
+		
 	getMe:->
-		deferred.promise
+		deferred
 		

@@ -16,6 +16,7 @@
       Q: "q",
       jquery: "jquery-2.1.1",
       knockout: "knockout-3.2.0.debug",
+      "knockout.mapping": "knockout.mapping-latest",
       listenToken: "App/ListenToken",
       utils: "App/utils"
     }

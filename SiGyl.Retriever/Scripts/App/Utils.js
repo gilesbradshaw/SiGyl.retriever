@@ -1,5 +1,5 @@
 (function() {
-  define(["linq"], function(linq) {
+  define(["linq", "Q"], function(linq, Q) {
     var utils;
     utils = {
       process: function(object, func) {
@@ -82,7 +82,9 @@
       }
     };
     return {
-      initMe: function() {},
+      initMe: function() {
+        return Q();
+      },
       getMe: function() {
         return utils;
       }

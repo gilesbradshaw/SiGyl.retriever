@@ -24,4 +24,5 @@ define [
 
 	getMe:->ObservableExtensions
 	initMe:->
-			ObservableExtensions.modelExtensions={}
+		ObservableExtensions.modelExtensions={}
+		Q()

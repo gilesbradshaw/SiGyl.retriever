@@ -1,17 +1,6 @@
 (function() {
-  define(["knockout", "b64", "linq", "observableExtensions", "utils"], function(ko, b64, linq, observableExtensionsMain, utils) {
-    var Store, collectionType, getKey, newEntity, updateEntity;
-    collectionType = function(conceptualModel, entityType, collection) {
-      var association, collectionNavigationProperty, toEnd;
-      collectionNavigationProperty = linq.From(entityType.navigationProperties).SingleOrDefault(function(x) {
-        return x.Key === collection;
-      }).Value;
-      association = conceptualModel.associations[collectionNavigationProperty.relationship.split('.')[1]];
-      toEnd = linq.From(association.end).Single(function(e) {
-        return e.role === collectionNavigationProperty.toRole;
-      });
-      return conceptualModel.entityTypes[toEnd.type.split('.')[2]];
-    };
+  define(["knockout", "knockout.mapping", "b64", "linq", "observableExtensions", "utils", "Q"], function(ko, mapping, b64, linq, observableExtensionsMain, utils, Q) {
+    var Store, getKey, newEntity, updateEntity;
     updateEntity = function(entityType, from, _to) {
       utils.getMe().process(entityType.property, (function(_this) {
         return function(property) {
@@ -152,10 +141,11 @@
         this.changeData = (function(_this) {
           return function(id, type, value) {
             var currentValue, entityType, key;
+            value = mapping.fromJS(value);
             entityType = conceptualModel.entityTypes[type.split('.')[0]];
             if (entityType) {
               if (type.split('.').length === 2) {
-                entityType = collectionType(conceptualModel, entityType, type.split('.')[1]);
+                entityType = utils.getMe().getDependent(entityType, type.split('.')[1]).entityType();
               }
               key = getKey(entityType, value);
               currentValue = entityType.data[key] || (entityType.data[key] = newEntity(value, conceptualModel, entityType, modelExtensions));
@@ -175,7 +165,7 @@
           entityType = conceptualModel.entityTypes[type.split('.')[0]];
           if (entityType) {
             if (type.split('.').length === 2) {
-              entityType = collectionType(conceptualModel, entityType, type.split('.')[1]);
+              entityType = utils.getMe().getDependent(entityType, type.split('.')[1]).entityType();
             }
             key = getKey(entityType, value);
             currentValue = entityType.data[key];
@@ -193,7 +183,9 @@
 
     })();
     return {
-      initMe: function() {},
+      initMe: function() {
+        return Q();
+      },
       getMe: function() {
         return Store;
       }

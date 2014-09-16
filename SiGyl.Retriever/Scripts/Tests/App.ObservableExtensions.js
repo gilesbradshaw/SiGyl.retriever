@@ -1,6 +1,4 @@
 (function() {
-  var listenTokenStubber, listenerStubber, retrieverStubber;
-
   requirejs.config({
     baseUrl: '../scripts',
     map: {
@@ -22,6 +20,7 @@
       sigr: "jquery.signalR-2.1.2",
       breeze: "breeze.debug",
       knockout: "knockout-3.2.0.debug",
+      "knockout.mapping": "knockout.mapping-latest",
       "knockout.punches": "knockout.punches",
       observableExtensions: "app/observableExtensions/observableExtensions",
       configurationMetaData: "Tests/metaData/configuration",
@@ -42,72 +41,76 @@
     }
   });
 
-  listenTokenStubber = {
-    getDataMerge: function() {},
-    getRetrieveRequest: function() {},
-    modifyRetrieveRequest: function() {}
-  };
-
-  define("listenToken", [], function() {
-    return {
-      getMe: function() {
-        return function(retriever, data) {
-          listenTokenStubber.retriever = retriever;
-          listenTokenStubber.data = data;
-          return listenTokenStubber;
-        };
-      },
-      initMe: function() {}
+  require(["Q"], function(Q) {
+    var listenTokenStubber, listenerStubber, retrieverStubber;
+    listenTokenStubber = {
+      getDataMerge: function() {},
+      getRetrieveRequest: function() {},
+      modifyRetrieveRequest: function() {}
     };
-  });
-
-  retrieverStubber = {};
-
-  define("retriever", [], function() {
-    return {
-      getMe: function() {
-        return retrieverStubber;
-      },
-      initMe: function() {}
+    define("listenToken", [], function() {
+      return {
+        getMe: function() {
+          return function(retriever, data) {
+            listenTokenStubber.retriever = retriever;
+            listenTokenStubber.data = data;
+            return listenTokenStubber;
+          };
+        },
+        initMe: function() {
+          return Q();
+        }
+      };
+    });
+    retrieverStubber = {};
+    define("retriever", [], function() {
+      return {
+        getMe: function() {
+          return retrieverStubber;
+        },
+        initMe: function() {
+          return Q();
+        }
+      };
+    });
+    listenerStubber = {
+      listen: function() {},
+      cycle: function() {}
     };
-  });
-
-  listenerStubber = {
-    listen: function() {},
-    cycle: function() {}
-  };
-
-  define("listener", [], function() {
-    return {
-      getMe: function() {
-        return listenerStubber;
-      },
-      initMe: function() {}
-    };
-  });
-
-  require(["linq", "knockout", "observableExtensions", "configurationMetaData", "runtimeMetaData", "historyMetaData", "utils", "sinon", "sinonie"], function(linq, ko, observableExtensions, configurationMetaData, runtimeMetaData, historyMetaData, utils) {
-    return QUnit.asyncTest("check linq", function(assert) {
-      var model, sandbox;
-      sandbox = sinon.sandbox.create();
-      sandbox.stub(listenTokenStubber, "getRetrieveRequest", function() {});
-      sandbox.stub(listenTokenStubber, "modifyRetrieveRequest", function() {});
-      model = utils.getMe().processModel(runtimeMetaData.getMe().schema);
-      observableExtensions.initMe();
-      return observableExtensions.getMe().create('RuntimeContext', model).done(function() {
-        var data, disposer, entityType, singleObservable, tested;
-        tested = observableExtensions.getMe().modelExtensions.RuntimeContext;
-        data = {
-          Id: ko.observable(1)
-        };
-        entityType = model.entityTypes.RuntimeEnterprise;
-        singleObservable = tested.singleObservable(data, "Application", entityType);
-        disposer = singleObservable.subscribe(function() {});
-        assert.ok(listenTokenStubber.getDataMerge.calledOnce, "getDataMerge");
-        assert.ok(listenTokenStubber.getRetrieveRequest.calledOnce, "getRetrieveRequest");
-        assert.ok(listenTokenStubber.modifyRetrieveRequest.calledOnce, "modifyRetrieveRequest");
-        sandbox.restore();
-        return QUnit.start();
+    define("listener", [], function() {
+      return {
+        getMe: function() {
+          return listenerStubber;
+        },
+        initMe: function() {
+          return Q();
+        }
+      };
+    });
+    return require(["linq", "knockout", "observableExtensions", "configurationMetaData", "runtimeMetaData", "historyMetaData", "utils", "sinon", "sinonie"], function(linq, ko, observableExtensions, configurationMetaData, runtimeMetaData, historyMetaData, utils) {
+      return QUnit.asyncTest("check linq", function(assert) {
+        var model, sandbox;
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(listenTokenStubber, "getRetrieveRequest", function() {});
+        sandbox.stub(listenTokenStubber, "modifyRetrieveRequest", function() {});
+        model = utils.getMe().processModel(runtimeMetaData.getMe().schema);
+        return observableExtensions.initMe().done(function() {
+          return observableExtensions.getMe().create('RuntimeContext', model).done(function() {
+            var data, disposer, entityType, singleObservable, tested;
+            tested = observableExtensions.getMe().modelExtensions.RuntimeContext;
+            data = {
+              Id: ko.observable(1)
+            };
+            entityType = model.entityTypes.RuntimeEnterprise;
+            singleObservable = tested.singleObservable(data, "Application", entityType);
+            disposer = singleObservable.subscribe(function() {});
+            assert.ok(listenTokenStubber.getDataMerge.calledOnce, "getDataMerge");
+            assert.ok(listenTokenStubber.getRetrieveRequest.calledOnce, "getRetrieveRequest");
+            assert.ok(listenTokenStubber.modifyRetrieveRequest.calledOnce, "modifyRetrieveRequest");
+            sandbox.restore();
+            return QUnit.start();
+          });
+        });
       });
     });
   });

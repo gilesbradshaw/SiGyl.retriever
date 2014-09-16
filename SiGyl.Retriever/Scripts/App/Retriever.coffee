@@ -63,26 +63,25 @@ define [
 				collectionUnlistens
 			)
 			i.done (x)->deferred.resolve(x)
-			i.catch (error)-> deferred.reject(error)
+			i.fail (error)-> deferred.reject(error)
 			i.finally ()->
 			deferred.promise
 	getMe:->
 		retriever
 	initMe:(urls)->
-		breezeRetriever.initMe urls
+		breezeRetriever.initMe(urls).then ()->
+			rindex=0
+			source.initMe().then ()->
+				source.getMe().on "change", (id,type,data)->
+					breezeRetriever.getMe().changeData(id,type,data).done (changed)->
+						if changed
+							listener.getMe().addData retriever, changed
+							listener.getMe().cycle()
 
-		rindex=0
-		source.initMe()
-		source.getMe().on "change", (id,type,data)->
-			breezeRetriever.getMe().changeData(id,type,data).done (changed)->
-				if changed
-					listener.getMe().addData retriever, changed
-					listener.getMe().cycle()
-
-		source.getMe().on "delete", (id,type,data)->
-			breezeRetriever.getMe().deleteData(id,type,data).done (toDelete)->
-				if toDelete
-					listener.getMe().deleteData retriever, changed
-				listener.getMe().cycle()
+				source.getMe().on "delete", (id,type,data)->
+					breezeRetriever.getMe().deleteData(id,type,data).done (toDelete)->
+						if toDelete
+							listener.getMe().deleteData retriever, toDelete
+						listener.getMe().cycle()
 		
 			

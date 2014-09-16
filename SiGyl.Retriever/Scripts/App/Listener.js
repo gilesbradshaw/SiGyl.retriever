@@ -334,8 +334,9 @@
         cycling = false;
         completing = false;
         if (completeTimer) {
-          return clearTimeout(completeTimer);
+          clearTimeout(completeTimer);
         }
+        return Q();
       }
     };
   });

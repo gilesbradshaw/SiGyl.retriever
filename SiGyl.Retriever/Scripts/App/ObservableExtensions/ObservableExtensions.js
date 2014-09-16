@@ -91,11 +91,7 @@
         })(this);
         this.manyObservable = (function(_this) {
           return function(data, type, collection, entityType) {
-            return baseObservable().entityType(function() {
-              return conceptualModel.entities[linq.From(entityType.navigationProperties).Single(function(x) {
-                return x.name === collection;
-              }).to.type];
-            }).getListenToken(function(observable) {
+            return baseObservable().entityType(utils.getMe().getDependent(entityType, collection).entityType).getListenToken(function(observable) {
               var listenToken, myKey;
               myKey = "Collection:" + type + ":" + collection + ":" + (parameterGroupId++);
               listenToken = new (ListenToken.getMe())(retriever, observable || ko.observableArray());
@@ -105,9 +101,7 @@
                 return function(addData, completeData) {
                   if (addData.value) {
                     if (addData.type === ("" + type + "." + collection)) {
-                      if (data.Id() === addData.value[linq.From(entityType.navigationProperties).Single(function(x) {
-                        return x.name === collection;
-                      }).to.referentialConstraints[0].to[0]]()) {
+                      if (data.Id() === addData.value[utils.getMe().getDependent(entityType, collection).id()]()) {
                         return true;
                       }
                     }
@@ -143,9 +137,7 @@
                 return function(deleteData) {
                   if (deleteData.value) {
                     if (deleteData.type === ("" + type + "." + collection)) {
-                      if (data.Id() === deleteData.value[linq.From(entityType.navigationProperties).Single(function(x) {
-                        return x.name === collection;
-                      }).to.referentialConstraints[0].to[0]]()) {
+                      if (data.Id() === deleteData.value[utils.getMe().getDependent(entityType, collection).id()]()) {
                         return listenToken.data.remove(deleteData.value);
                       }
                     }
@@ -494,8 +486,7 @@
         })(this);
         this.singleObservable = (function(_this) {
           return function(data, property, entityType) {
-            var idObservable, navigationProperty, principal;
-            navigationProperty = entityType.navigationProperties[property];
+            var idObservable, principal;
             principal = utils.getMe().getPrincipal(entityType, property);
             idObservable = data[principal.id()];
             return relationObserve(retriever, idObservable, property, principal.type(), entityType, principal.entityType, "Single");
@@ -713,7 +704,8 @@
         return ObservableExtensions;
       },
       initMe: function() {
-        return ObservableExtensions.modelExtensions = {};
+        ObservableExtensions.modelExtensions = {};
+        return Q();
       }
     };
   });

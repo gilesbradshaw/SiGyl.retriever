@@ -126,5 +126,4 @@ define [
 		
 	getMe:()-> breezeRetriever
 	initMe:(urls)->
-		
 		breezeEntityManagers.initMe urls

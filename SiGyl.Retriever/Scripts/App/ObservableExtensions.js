@@ -35,7 +35,8 @@
         return ObservableExtensions;
       },
       initMe: function() {
-        return ObservableExtensions.modelExtensions = {};
+        ObservableExtensions.modelExtensions = {};
+        return Q();
       }
     };
   });
