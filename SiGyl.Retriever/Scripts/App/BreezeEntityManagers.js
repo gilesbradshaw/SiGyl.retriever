@@ -1,5 +1,5 @@
 (function() {
-  define(["Q", "linq", "breeze", "store", "observableExtensions"], function(Q, linq, breeze, Store, ObservableExtensions) {
+  define(["Q", "linq", "breeze", "store", "observableExtensions", "utils"], function(Q, linq, breeze, Store, ObservableExtensions, utils) {
     var deferred, getMetaData;
     getMetaData = function(url) {
       var getMetaDataDeferred, manager, metaDataFetch;
@@ -32,7 +32,7 @@
           creates = [];
           for (_i = 0, _len = managers.length; _i < _len; _i++) {
             manager = managers[_i];
-            manager.store = new Store(manager.metaData.schema);
+            manager.store = new (Store.getMe())(utils.getMe().processModel(manager.metaData.schema));
             creates.push(ObservableExtensions.getMe().create(manager.metaData.schema.entityContainer.name, manager.metaData.schema));
           }
           return Q.all(creates).done(function() {
@@ -70,23 +70,14 @@
                   manager: manager.manager,
                   entityType: entityType,
                   collectionManager: function(collection) {
-                    var association, collectionEntityContainer, dependentEnd, dependentId, dependentReferentialConstraint, navigationProperty, relationship;
-                    navigationProperty = entityType.navigationProperties[collection];
-                    relationship = navigationProperty.relationship.split('.')[1];
-                    association = linq.From(manager.metaData.schema.association).Single(function(a) {
-                      return a.name === relationship;
-                    });
-                    dependentReferentialConstraint = association.referentialConstraint.dependent;
-                    dependentId = dependentReferentialConstraint.propertyRef.name;
-                    dependentEnd = linq.From(association.end).Single(function(e) {
-                      return e.role === dependentReferentialConstraint.role;
-                    });
+                    var collectionEntityContainer, dependent;
+                    dependent = utils.getMe().getDependent(entityType, collection);
                     collectionEntityContainer = linq.From(manager.metaData.schema.entityContainer.entitySet).Single(function(eset) {
-                      return eset.entityType.split('.')[1] === dependentEnd.type.split('.')[2];
+                      return eset.entityType.split('.')[1] === dependent.type();
                     }).name;
                     return {
                       query: function(id) {
-                        return breeze.EntityQuery.from(collectionEntityContainer).inlineCount().where(dependentId, '==', id);
+                        return breeze.EntityQuery.from(collectionEntityContainer).inlineCount().where(dependent.id(), '==', id);
                       }
                     };
                   }

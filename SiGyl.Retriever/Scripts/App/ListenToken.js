@@ -56,10 +56,6 @@
         this.getProcessMetaData = __bind(this.getProcessMetaData, this);
         this.getDataMerge = __bind(this.getDataMerge, this);
         this.extend = __bind(this.extend, this);
-        this.queueDeleteData = __bind(this.queueDeleteData, this);
-        this.deleteData = __bind(this.deleteData, this);
-        this.queueAddData = __bind(this.queueAddData, this);
-        this.addData = __bind(this.addData, this);
         this.cancelIdUnlisten = __bind(this.cancelIdUnlisten, this);
         this.processMetaData = __bind(this.processMetaData, this);
         this.collectionRetrieveRequestMerge = __bind(this.collectionRetrieveRequestMerge, this);
@@ -472,14 +468,6 @@
         }
         return true;
       };
-
-      ListenToken.prototype.addData = function() {};
-
-      ListenToken.prototype.queueAddData = function() {};
-
-      ListenToken.prototype.deleteData = function() {};
-
-      ListenToken.prototype.queueDeleteData = function() {};
 
       ListenToken.prototype.extend = function(extend) {
         this.data.extend(extend);

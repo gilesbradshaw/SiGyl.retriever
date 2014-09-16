@@ -57,6 +57,7 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ObservableExtensions.html" />
     <Content Include="BreezeEntityManagers.html" />
     <Content Include="BreezeRetriever.html" />
     <Content Include="ListenToken.html" />
@@ -143,6 +144,12 @@
     </Content>
     <Content Include="Scripts\App\ObservableExtensions\Title.min.js">
       <DependentUpon>Title.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\Utils.js">
+      <DependentUpon>Utils.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\Utils.min.js">
+      <DependentUpon>Utils.coffee</DependentUpon>
     </Content>
     <Content Include="Scripts\jquery.signalR-2.1.2.js" />
     <Content Include="Scripts\jquery.signalR-2.1.2.min.js" />
@@ -269,6 +276,7 @@
     <Content Include="Scripts\App\ObservableExtensions\SelectMany.coffee" />
     <Content Include="Scripts\App\ObservableExtensions\SelectSingle.coffee" />
     <Content Include="Scripts\App\ObservableExtensions\Title.coffee" />
+    <Content Include="Scripts\App\Utils.coffee" />
     <None Include="Scripts\jquery-2.1.1.intellisense.js" />
     <Content Include="Scripts\App\Store.js">
       <DependentUpon>Store.coffee</DependentUpon>

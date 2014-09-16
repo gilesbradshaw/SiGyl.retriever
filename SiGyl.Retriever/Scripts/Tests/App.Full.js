@@ -33,6 +33,7 @@
       configurationMetaData: "Tests/metaData/configuration",
       runtimeMetaData: "Tests/metaData/runtime",
       historyMetaData: "Tests/metaData/history",
+      utils: "App/utils",
       "observableExtensions.listener": "App/ObservableExtensions/listener",
       "observableExtensions.base": "App/ObservableExtensions/base",
       "observableExtensions.order": "App/ObservableExtensions/order",
@@ -64,7 +65,7 @@
                     "Id": "1",
                     "ParameterGroups": [
                       {
-                        "Name": "Root:Application:0",
+                        "Name": "Root:Enterprise:0",
                         "Parameters": [
                           {
                             "Name": "id",
@@ -81,20 +82,25 @@
                     ]
                   }
                 ],
-                "type": "Application"
+                "type": "Enterprise"
               }
             ];
           }
         }
       ]);
       return pr.done(function(x) {
-        var hello;
-        ko.applyBindings(x[0].Ids[0].ParameterGroups[0].Value[0]);
-        hello = x[0].Ids[0].ParameterGroups[0].Value[0].Enterprises.any()();
-        return hello.subscribe(function(xx) {
-          assert.ok(true);
-          sandbox.restore();
-          return QUnit.start();
+        var sites, value;
+        value = x[0].Ids[0].ParameterGroups[0].Value[0];
+        ko.applyBindings(value);
+        sites = value.Sites.any()();
+        return sites.subscribe(function(xx) {
+          var application;
+          application = value.Application;
+          return application.subscribe(function() {
+            assert.ok(true);
+            sandbox.restore();
+            return QUnit.start();
+          });
         });
       });
     });

@@ -19,8 +19,11 @@
 
 	<div style="display:none" data-bind="attr:{style:'display:block'}">
 		<h1>{{Name}}</h1>
+		{{#with:Application}}
+		<div>{{Name}}</div>
+		{{/with}}
 		<ul>
-			{{#foreach:Enterprises.any()()}}
+			{{#foreach:Sites.any()()}}
 			<li>{{Name}}</li>
 			{{/foreach}}
 		</ul>

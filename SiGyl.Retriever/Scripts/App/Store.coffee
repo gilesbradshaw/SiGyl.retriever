@@ -4,25 +4,20 @@ define [
 	"b64"
 	"linq"
 	"observableExtensions"
-],(ko,b64,linq,observableExtensionsMain) ->
+	"utils"
+],(ko,b64,linq,observableExtensionsMain,utils) ->
 
 
 
 
-	process=(object, func)->
-		if object 
-			if object.length isnt undefined
-				for o in object
-					func o
-			else
-				func object
+	
 	collectionType=(conceptualModel,entityType,collection)->
 		collectionNavigationProperty = linq.From(entityType.navigationProperties).SingleOrDefault((x)->x.Key==collection).Value
 		association=conceptualModel.associations[collectionNavigationProperty.relationship.split('.')[1]]
 		toEnd= linq.From(association.end).Single((e)->e.role is collectionNavigationProperty.toRole)
 		conceptualModel.entityTypes[toEnd.type.split('.')[2]]
 	updateEntity=(entityType, from, _to)->
-		process entityType.property, (property)=>
+		utils.getMe().process entityType.property, (property)=>
 			if (property.name of from)
 				if ko.isObservable _to[property.name]
 					_to[property.name] ko.utils.unwrapObservable from[property.name]
@@ -43,11 +38,11 @@ define [
 			ret[property.name] = from[property.name]
 			
 		#if entityType.flexibleRelations
-		process entityType.flexibleRelations, (flexibleRelation)->
+		utils.getMe().process entityType.flexibleRelations, (flexibleRelation)->
 			ret[flexibleRelation.name] = modelExtensions[model.entityContainer.name].flexibleRelationObservable ret, flexibleRelation.name, entityType
-		process entityType.interModelRelations, (interModelRelation)->
+		utils.getMe().process entityType.interModelRelations, (interModelRelation)->
 			ret[interModelRelation.name] = modelExtensions[model.entityContainer.name].interModelRelationObservable ret, interModelRelation.name, entityType
-		process entityType.navigationProperty, (navigationProperty)->
+		utils.getMe().process entityType.navigationProperty, (navigationProperty)->
 			association=model.associations[navigationProperty.relationship.split('.')[1]]
 			toEnd= linq.From(association.end).Single((e)->e.role is navigationProperty.toRole)
 			if toEnd.multiplicity is "*"
@@ -71,19 +66,7 @@ define [
 
 		constructor:(conceptualModel)->
 			modelExtensions=observableExtensionsMain.getMe().modelExtensions
-			conceptualModel.entityTypes={}
-			process conceptualModel.entityType, (entityType)->
-				entityType.model = conceptualModel
-				entityType.data = {}
-				conceptualModel.entityTypes[entityType.name]= entityType
-				entityType.navigationProperties={}
-				process entityType.navigationProperty, (navigationProperty)->
-					entityType.navigationProperties[navigationProperty.name] = navigationProperty
-
-			conceptualModel.associations={}
-			process conceptualModel.association, (association)->
-				conceptualModel.associations[association.name] = association
-				
+			
 
 
 			@mergeData=(type,data)=>
@@ -154,4 +137,5 @@ define [
 					type:type
 					value:currentValue
 					
-				
+	initMe:->
+	getMe:->Store

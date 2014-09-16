@@ -24,6 +24,7 @@
 		configurationMetaData:"tests/metaData/configuration"
 		runtimeMetaData:"tests/metaData/runtime"
 		historyMetaData:"tests/metaData/history"
+		utils:"App/utils"
 
 
 listener=

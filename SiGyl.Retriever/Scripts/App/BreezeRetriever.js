@@ -138,7 +138,12 @@
                     return parameterGroupDeferred.resolve({
                       Name: parameterGroup.Name,
                       Collection: {
-                        data: x.results,
+                        data: linq.From(x.results).Select(function(res) {
+                          var store, typeName;
+                          typeName = res.entityAspect.entityGroup.entityType.shortName;
+                          store = managers.getStore(typeName);
+                          return store.mergeData(typeName, res);
+                        }).ToArray(),
                         metaData: {
                           count: x.inlineCount
                         }

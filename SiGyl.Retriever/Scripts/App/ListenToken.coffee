@@ -220,13 +220,6 @@ define [
 
 
 
-
-		addData:=>
-		queueAddData:=>
-		deleteData:=>
-		queueDeleteData:=>
-
-
 		extend:(extend)=>
 			@data.extend extend
 			@

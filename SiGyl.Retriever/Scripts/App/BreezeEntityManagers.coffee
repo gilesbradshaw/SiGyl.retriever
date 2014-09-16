@@ -5,7 +5,8 @@ define [
 	"breeze"
 	"store"
 	"observableExtensions"
-],(Q,linq,breeze,Store,ObservableExtensions) ->
+	"utils"
+],(Q,linq,breeze,Store,ObservableExtensions,utils) ->
 
 
 	getMetaData=(url)->
@@ -30,7 +31,7 @@ define [
 		entityManagers.done (managers)->
 			creates=[]
 			for manager in managers
-				manager.store = new Store manager.metaData.schema
+				manager.store = new (Store.getMe()) utils.getMe().processModel manager.metaData.schema
 				creates.push ObservableExtensions.getMe().create manager.metaData.schema.entityContainer.name, manager.metaData.schema
 			Q.all(creates).done ()->
 				getManager=(type)->
@@ -50,14 +51,9 @@ define [
 						manager:manager.manager
 						entityType:entityType
 						collectionManager:(collection)->
-							navigationProperty= entityType.navigationProperties[collection]
-							relationship = navigationProperty.relationship.split('.')[1]
-							association=linq.From(manager.metaData.schema.association).Single((a)->a.name== relationship)
-							dependentReferentialConstraint= association.referentialConstraint.dependent
-							dependentId = dependentReferentialConstraint.propertyRef.name
-							dependentEnd= linq.From(association.end).Single((e)->e.role == dependentReferentialConstraint.role)
-							collectionEntityContainer = linq.From(manager.metaData.schema.entityContainer.entitySet).Single((eset)-> eset.entityType.split('.')[1] is dependentEnd.type.split('.')[2]).name
-							query:(id)->breeze.EntityQuery.from(collectionEntityContainer).inlineCount().where dependentId, '==', id
+							dependent= utils.getMe().getDependent entityType, collection
+							collectionEntityContainer = linq.From(manager.metaData.schema.entityContainer.entitySet).Single((eset)-> eset.entityType.split('.')[1] is dependent.type()).name
+							query:(id)->breeze.EntityQuery.from(collectionEntityContainer).inlineCount().where dependent.id(), '==', id
 
 		entityManagers.catch ()->
 			deferred.reject()

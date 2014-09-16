@@ -29,6 +29,7 @@
 		configurationMetaData:"Tests/metaData/configuration"
 		runtimeMetaData:"Tests/metaData/runtime"
 		historyMetaData:"Tests/metaData/history"
+		utils:"App/utils"
 
 		"observableExtensions.listener": "App/ObservableExtensions/listener"
 		"observableExtensions.base": "App/ObservableExtensions/base"
@@ -73,7 +74,7 @@ require [
 				"ids":[
 					"Id":"1"
 					"ParameterGroups":[
-						"Name":"Root:Application:0"
+						"Name":"Root:Enterprise:0"
 						"Parameters":[
 							"Name":"id"
 							"Id":"id"
@@ -84,15 +85,18 @@ require [
 						]
 					]
 				]
-				"type":"Application"
+				"type":"Enterprise"
 			]
 		]
 
 		pr.done (x)->
-			ko.applyBindings x[0].Ids[0].ParameterGroups[0].Value[0]
-			hello = x[0].Ids[0].ParameterGroups[0].Value[0].Enterprises.any()()
-			hello.subscribe (xx)->
-				assert.ok true
-				sandbox.restore()
-				QUnit.start()
+			value= x[0].Ids[0].ParameterGroups[0].Value[0]
+			ko.applyBindings value
+			sites = value.Sites.any()()
+			sites.subscribe (xx)->
+				application = value.Application
+				application.subscribe ()->
+					assert.ok true
+					sandbox.restore()
+					QUnit.start()
 		

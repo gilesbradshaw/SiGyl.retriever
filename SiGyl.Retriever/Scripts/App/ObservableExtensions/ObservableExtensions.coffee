@@ -3,6 +3,7 @@ define [
 	"knockout"
 	"Q"
 	"listenToken"
+	"utils"
 	"breeze"
 	"linq"
 	"observableExtensions.listener"
@@ -15,7 +16,7 @@ define [
 	"observableExtensions.selectSingle"
 	"observableExtensions.select"
 	"observableExtensions.mixinTo"
-],($,ko,Q,ListenToken,breeze, linq) ->
+],($,ko,Q,ListenToken,utils,breeze, linq) ->
 
 	ObservableExtensions=
 		class ObservableExtensions
@@ -320,7 +321,7 @@ define [
 												Name:'id'
 												Value:idObservable.peek()
 											]
-
+								listenToken
 
 
 							listen:(token)->
@@ -346,16 +347,10 @@ define [
 					relationObserve retriever, idObservable, '.', type, conceptualModel.entities[type], entityTypeFunc, "Self"
 
 				@singleObservable = (data, property, entityType) =>
-					navigationProperty = linq.From(entityType.navigationProperties).Single((x)->x.name is property)
-					#!!!
-					if !navigationProperty.to.referentialConstraints.length
-						return
-					idObservable = data[navigationProperty.to.referentialConstraints[0].to[0]]
-
-					entityTypeFunc = ->conceptualModel.entities[navigationProperty.to.type]
-
-					relationObserve retriever, idObservable, property, navigationProperty.to.type, entityType, entityTypeFunc, "Single"
-
+					navigationProperty = entityType.navigationProperties[property]
+					principal = utils.getMe().getPrincipal entityType, property
+					idObservable = data[principal.id()]
+					relationObserve retriever, idObservable, property, principal.type(), entityType, principal.entityType, "Single"
 
 				@flexibleRelationObservable = (data, property, entityType) =>
 					navigationProperty = linq.From(entityType.flexibleRelations).Single((x)->x.name is property)
@@ -363,11 +358,7 @@ define [
 					relatedType = data[navigationProperty.relatedTypeProperty]()
 					entityTypeFunc = ->conceptualModel.entities[navigationProperty.relatedTypeProperty]
 					relationObserve retriever, idObservable, property, relatedType, entityType, entityTypeFunc, "Flexible"
-				
-
-
 				entityManagers={}
-
 				@interModelRelationObservable = (data, property, entityType) =>
 					navigationProperty = linq.From(entityType.interModelRelations).Single((x)->x.name is property)
 					entityManagers[navigationProperty.model] or= new breeze.EntityManager "breeze/" + navigationProperty.model
@@ -462,6 +453,7 @@ define [
 											Name:'id'
 											Value:id
 										]
+								listenToken
 							listen:(token)->
 								listener.listen token
 							unlisten:(token)->

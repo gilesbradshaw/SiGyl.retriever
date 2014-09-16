@@ -90,7 +90,11 @@ define [
 									parameterGroupDeferred.resolve
 										Name:parameterGroup.Name
 										Collection:
-											data:x.results
+											data:linq.From(x.results).Select((res)->
+												typeName= res.entityAspect.entityGroup.entityType.shortName
+												store = managers.getStore typeName
+												store.mergeData typeName,res
+											).ToArray()
 											metaData:
 												count:x.inlineCount
 

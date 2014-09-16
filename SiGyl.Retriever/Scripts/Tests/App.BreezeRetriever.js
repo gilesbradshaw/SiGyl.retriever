@@ -1,4 +1,6 @@
 (function() {
+  var storeStubber;
+
   requirejs.config({
     baseUrl: '../scripts',
     map: {
@@ -20,20 +22,39 @@
       knockout: "knockout-3.2.0.debug",
       breezeretriever: "App/BreezeRetriever",
       breezeEntityManagers: "App/BreezeEntityManagers",
-      store: "App/store",
       b64: "App/b64",
-      source: "App/Source",
       observableExtensions: "app/observableExtensions",
       configurationMetaData: "tests/metaData/configuration",
       runtimeMetaData: "tests/metaData/runtime",
-      historyMetaData: "tests/metaData/history"
+      historyMetaData: "tests/metaData/history",
+      utils: "App/utils"
     }
   });
 
-  require(["linq", "Q", "breezeretriever", "source", "configurationMetaData", "runtimeMetaData", "historyMetaData", "sinon", "sinonie"], function(linq, Q, breezeRetriever, source, configurationMetaData, runtimeMetaData, historyMetaData) {
+  storeStubber = {
+    mergeData: function() {},
+    changeData: function() {},
+    deleteData: function() {}
+  };
+
+  define("store", [], function() {
+    return {
+      getMe: function() {
+        return function() {
+          return storeStubber;
+        };
+      },
+      initMe: function() {}
+    };
+  });
+
+  require(["linq", "Q", "breezeretriever", "configurationMetaData", "runtimeMetaData", "historyMetaData", "sinon", "sinonie"], function(linq, Q, breezeRetriever, configurationMetaData, runtimeMetaData, historyMetaData) {
     QUnit.asyncTest("breezeRetrieve get", function(assert) {
-      var promise, server;
-      server = sinon.fakeServer.create();
+      var promise, sandbox, server;
+      sandbox = sinon.sandbox.create();
+      sandbox.useFakeServer();
+      server = sandbox.server;
+      sandbox.stub(storeStubber, "mergeData").returnsArg(1);
       breezeRetriever.initMe(["http://localhost:41374/breeze/configuration"]);
       server.respondWith("GET", "http://localhost:41374/breeze/configuration/Metadata", JSON.stringify(configurationMetaData.getMe()));
       server.respond();
@@ -66,6 +87,8 @@
         }
       ]);
       promise.done(function(data) {
+        assert.ok(storeStubber.mergeData.calledOnce, "store mergeData called once");
+        assert.ok(storeStubber.mergeData.args[0][0] === "Application", "Application stored");
         assert.ok(data[0].Type === "Application", "application returned");
         assert.ok(data.length === 1);
         assert.ok(data[0].Ids[0].Key === 1);
@@ -75,12 +98,12 @@
         assert.ok(data[0].Ids[0].ParameterGroups[0].Value.length === 1);
         assert.ok(data[0].Ids[0].ParameterGroups[0].Value[0].Id() === 1);
         assert.ok(data[0].Ids[0].ParameterGroups[0].Value[0].Timestamp() === "AAAAAAAGj7E=");
-        server.restore();
+        sandbox.restore();
         return QUnit.start();
       });
       promise["catch"](function() {
         assert.ok(false, "retrieve failed");
-        server.restore();
+        sandbox.restore();
         return QUnit.start();
       });
       return setTimeout(function() {
@@ -88,8 +111,12 @@
       }, 1000);
     });
     return QUnit.asyncTest("breezeRetrieve get collection", function(assert) {
-      var promise, server;
-      server = sinon.fakeServer.create();
+      var promise, sandbox, server, sourceDefer;
+      sandbox = sinon.sandbox.create();
+      sandbox.useFakeServer();
+      server = sandbox.server;
+      sourceDefer = Q.defer();
+      sandbox.stub(storeStubber, "mergeData").returnsArg(1);
       breezeRetriever.initMe(["http://localhost:41374/breeze/history"]);
       server.respondWith("GET", "http://localhost:41374/breeze/history/Metadata", JSON.stringify(historyMetaData.getMe()));
       server.respond();
@@ -164,7 +191,15 @@
         }
       ]);
       promise.done(function(data) {
-        assert.ok(true);
+        assert.ok(storeStubber.mergeData.calledOnce, "store mergeData called once");
+        assert.ok(storeStubber.mergeData.args[0][0] === "HistoryBatch", "HistoryBatch stored");
+        assert.ok(storeStubber.mergeData.args[0][1].Name() === "gggg", "HistoryBatch stored");
+        assert.ok(data[0].Type === "HistoryZone", "application returned");
+        assert.ok(data.length === 1);
+        assert.ok(data[0].Collections[0].Collection === "Batches");
+        assert.ok(data[0].Collections[0].Ids.length === 1);
+        assert.ok(data[0].Collections[0].Ids[0].Key === 1);
+        assert.ok(data[0].Collections[0].Ids[0].ParameterGroups.length === 1);
         server.restore();
         return QUnit.start();
       });
@@ -174,6 +209,7 @@
         return QUnit.start();
       });
       return setTimeout(function() {
+        sourceDefer.resolve();
         return server.respond();
       }, 1000);
     });

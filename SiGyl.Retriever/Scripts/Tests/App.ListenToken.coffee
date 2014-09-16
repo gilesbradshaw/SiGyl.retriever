@@ -13,6 +13,7 @@
 		jquery:"jquery-2.1.1"
 		knockout:"knockout-3.2.0.debug"
 		listenToken:"App/ListenToken"
+		utils:"App/utils"
 
 
 require [

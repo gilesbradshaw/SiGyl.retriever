@@ -1,5 +1,5 @@
 (function() {
-  define(["jquery", "knockout", "Q", "listenToken", "breeze", "linq", "observableExtensions.listener", "observableExtensions.base", "observableExtensions.order", "observableExtensions.filter", "observableExtensions.page", "observableExtensions.title", "observableExtensions.selectMany", "observableExtensions.selectSingle", "observableExtensions.select", "observableExtensions.mixinTo"], function($, ko, Q, ListenToken, breeze, linq) {
+  define(["jquery", "knockout", "Q", "listenToken", "utils", "breeze", "linq", "observableExtensions.listener", "observableExtensions.base", "observableExtensions.order", "observableExtensions.filter", "observableExtensions.page", "observableExtensions.title", "observableExtensions.selectMany", "observableExtensions.selectSingle", "observableExtensions.select", "observableExtensions.mixinTo"], function($, ko, Q, ListenToken, utils, breeze, linq) {
     var ObservableExtensions;
     ObservableExtensions = ObservableExtensions = (function() {
       function ObservableExtensions(conceptualModel, retriever, listener) {
@@ -443,7 +443,7 @@
                       return parameterGroup.Parameters;
                     }
                   });
-                  return listenToken.modifyRetrieveRequest(function(parameters) {
+                  listenToken.modifyRetrieveRequest(function(parameters) {
                     if (idObservable()) {
                       return parameters.push({
                         Name: "id",
@@ -457,6 +457,7 @@
                       });
                     }
                   });
+                  return listenToken;
                 },
                 listen: function(token) {
                   return listener.listen(token);
@@ -493,18 +494,11 @@
         })(this);
         this.singleObservable = (function(_this) {
           return function(data, property, entityType) {
-            var entityTypeFunc, idObservable, navigationProperty;
-            navigationProperty = linq.From(entityType.navigationProperties).Single(function(x) {
-              return x.name === property;
-            });
-            if (!navigationProperty.to.referentialConstraints.length) {
-              return;
-            }
-            idObservable = data[navigationProperty.to.referentialConstraints[0].to[0]];
-            entityTypeFunc = function() {
-              return conceptualModel.entities[navigationProperty.to.type];
-            };
-            return relationObserve(retriever, idObservable, property, navigationProperty.to.type, entityType, entityTypeFunc, "Single");
+            var idObservable, navigationProperty, principal;
+            navigationProperty = entityType.navigationProperties[property];
+            principal = utils.getMe().getPrincipal(entityType, property);
+            idObservable = data[principal.id()];
+            return relationObserve(retriever, idObservable, property, principal.type(), entityType, principal.entityType, "Single");
           };
         })(this);
         this.flexibleRelationObservable = (function(_this) {
@@ -647,7 +641,7 @@
                     idRequest.ParameterGroups.push(parameterGroup);
                     return parameterGroup.Parameters;
                   });
-                  return listenToken.modifyRetrieveRequest(function(parameters) {
+                  listenToken.modifyRetrieveRequest(function(parameters) {
                     return parameters.push({
                       Name: "id",
                       Id: 'id',
@@ -659,6 +653,7 @@
                       ]
                     });
                   });
+                  return listenToken;
                 },
                 listen: function(token) {
                   return listener.listen(token);

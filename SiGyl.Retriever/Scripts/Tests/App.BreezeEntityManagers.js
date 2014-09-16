@@ -22,7 +22,8 @@
       observableExtensions: "app/observableExtensions",
       configurationMetaData: "tests/metaData/configuration",
       runtimeMetaData: "tests/metaData/runtime",
-      historyMetaData: "tests/metaData/history"
+      historyMetaData: "tests/metaData/history",
+      utils: "App/utils"
     }
   });
 

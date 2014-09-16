@@ -1,21 +1,6 @@
 (function() {
-  define(["knockout", "b64", "linq", "observableExtensions"], function(ko, b64, linq, observableExtensionsMain) {
-    var Store, collectionType, getKey, newEntity, process, updateEntity;
-    process = function(object, func) {
-      var o, _i, _len, _results;
-      if (object) {
-        if (object.length !== void 0) {
-          _results = [];
-          for (_i = 0, _len = object.length; _i < _len; _i++) {
-            o = object[_i];
-            _results.push(func(o));
-          }
-          return _results;
-        } else {
-          return func(object);
-        }
-      }
-    };
+  define(["knockout", "b64", "linq", "observableExtensions", "utils"], function(ko, b64, linq, observableExtensionsMain, utils) {
+    var Store, collectionType, getKey, newEntity, updateEntity;
     collectionType = function(conceptualModel, entityType, collection) {
       var association, collectionNavigationProperty, toEnd;
       collectionNavigationProperty = linq.From(entityType.navigationProperties).SingleOrDefault(function(x) {
@@ -28,7 +13,7 @@
       return conceptualModel.entityTypes[toEnd.type.split('.')[2]];
     };
     updateEntity = function(entityType, from, _to) {
-      process(entityType.property, (function(_this) {
+      utils.getMe().process(entityType.property, (function(_this) {
         return function(property) {
           if (property.name in from) {
             if (ko.isObservable(_to[property.name])) {
@@ -52,13 +37,13 @@
         property = _ref[_i];
         ret[property.name] = from[property.name];
       }
-      process(entityType.flexibleRelations, function(flexibleRelation) {
+      utils.getMe().process(entityType.flexibleRelations, function(flexibleRelation) {
         return ret[flexibleRelation.name] = modelExtensions[model.entityContainer.name].flexibleRelationObservable(ret, flexibleRelation.name, entityType);
       });
-      process(entityType.interModelRelations, function(interModelRelation) {
+      utils.getMe().process(entityType.interModelRelations, function(interModelRelation) {
         return ret[interModelRelation.name] = modelExtensions[model.entityContainer.name].interModelRelationObservable(ret, interModelRelation.name, entityType);
       });
-      process(entityType.navigationProperty, function(navigationProperty) {
+      utils.getMe().process(entityType.navigationProperty, function(navigationProperty) {
         var association, toEnd;
         association = model.associations[navigationProperty.relationship.split('.')[1]];
         toEnd = linq.From(association.end).Single(function(e) {
@@ -94,24 +79,10 @@
       };
       return ret;
     };
-    return Store = (function() {
+    Store = (function() {
       function Store(conceptualModel) {
         var modelExtensions;
         modelExtensions = observableExtensionsMain.getMe().modelExtensions;
-        conceptualModel.entityTypes = {};
-        process(conceptualModel.entityType, function(entityType) {
-          entityType.model = conceptualModel;
-          entityType.data = {};
-          conceptualModel.entityTypes[entityType.name] = entityType;
-          entityType.navigationProperties = {};
-          return process(entityType.navigationProperty, function(navigationProperty) {
-            return entityType.navigationProperties[navigationProperty.name] = navigationProperty;
-          });
-        });
-        conceptualModel.associations = {};
-        process(conceptualModel.association, function(association) {
-          return conceptualModel.associations[association.name] = association;
-        });
         this.mergeData = (function(_this) {
           return function(type, data) {
             var collection, collectionEntity, collectionEntityName, currentValue, entity, entityType, id, key, mergeKey, parameterGroup, result, value, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _m, _n, _o, _p, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
@@ -221,6 +192,12 @@
       return Store;
 
     })();
+    return {
+      initMe: function() {},
+      getMe: function() {
+        return Store;
+      }
+    };
   });
 
 }).call(this);

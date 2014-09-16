@@ -19,7 +19,8 @@
       b64: "App/b64",
       configurationMetaData: "tests/metaData/configuration",
       runtimeMetaData: "tests/metaData/runtime",
-      historyMetaData: "tests/metaData/history"
+      historyMetaData: "tests/metaData/history",
+      utils: "App/utils"
     }
   });
 
@@ -53,7 +54,7 @@
         return observableExtensionsStub;
       });
       md = configurationMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.mergeData('Enterprise', {
         Id: 1,
         Name: 'enterprise',
@@ -83,7 +84,7 @@
         return observableExtensionsStub;
       });
       md = runtimeMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.mergeData('RuntimeCommandInstance', {
         Id: 1,
         Name: 'rci',
@@ -111,7 +112,7 @@
         return observableExtensionsStub;
       });
       md = historyMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.mergeData('HistoryAlarm', {
         Id: 1,
         RuntimeId: 22,
@@ -135,7 +136,7 @@
         return observableExtensionsStub;
       });
       md = configurationMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.changeData(1, 'Enterprise', {
         Id: 1,
         Name: 'enterprise',
@@ -162,7 +163,7 @@
         return observableExtensionsStub;
       });
       md = configurationMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.changeData(1, 'Enterprise', {
         Id: 1,
         Name: 'enterprise',
@@ -192,7 +193,7 @@
         return observableExtensionsStub;
       });
       md = configurationMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.changeData(1, 'Enterprise', {
         Id: 1,
         Name: 'enterprise',
@@ -222,7 +223,7 @@
         return observableExtensionsStub;
       });
       md = configurationMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.changeData(1, 'Application.Enterprises', {
         Id: 22,
         Name: 'enterprise',
@@ -249,7 +250,7 @@
         return observableExtensionsStub;
       });
       md = configurationMetaData.getMe();
-      tested = new store(md.schema);
+      tested = new (store.getMe())(md.schema);
       ret = tested.changeData(1, 'Application.Enterprises', {
         Id: 22,
         Name: 'enterprise',

@@ -16,31 +16,39 @@
 		knockout:"knockout-3.2.0.debug"
 		breezeretriever:"App/BreezeRetriever"
 		breezeEntityManagers:"App/BreezeEntityManagers"
-		store:"App/store"
 		b64:"App/b64"
-		source:"App/Source"
 		observableExtensions:"app/observableExtensions"
 		configurationMetaData:"tests/metaData/configuration"
 		runtimeMetaData:"tests/metaData/runtime"
 		historyMetaData:"tests/metaData/history"
+		utils:"App/utils"
 
+storeStubber=
+	mergeData:->
+	changeData:->
+	deleteData:->
+define "store",[],()->
+	getMe:->()->storeStubber
+	initMe:->
 
 require [
 	"linq"
 	"Q"
 	"breezeretriever"
-	"source"
 	"configurationMetaData"
 	"runtimeMetaData"
 	"historyMetaData"
 	"sinon"
 	"sinonie"
 	
-], (linq,Q,breezeRetriever,source,configurationMetaData,runtimeMetaData,historyMetaData)->
+], (linq,Q,breezeRetriever,configurationMetaData,runtimeMetaData,historyMetaData)->
 
 	QUnit.asyncTest "breezeRetrieve get", (assert)->
-		server = sinon.fakeServer.create();
+		sandbox=sinon.sandbox.create()
+		sandbox.useFakeServer()
+		server = sandbox.server
 		
+		sandbox.stub(storeStubber, "mergeData").returnsArg 1
 		
 
 		breezeRetriever.initMe [
@@ -69,7 +77,11 @@ require [
 					
 		]
 
+		
+
 		promise.done (data)->
+			assert.ok storeStubber.mergeData.calledOnce, "store mergeData called once"
+			assert.ok storeStubber.mergeData.args[0][0] is "Application", "Application stored"
 			assert.ok data[0].Type is "Application", "application returned"
 			assert.ok data.length is 1 
 			assert.ok data[0].Ids[0].Key is 1
@@ -80,17 +92,24 @@ require [
 			assert.ok data[0].Ids[0].ParameterGroups[0].Value[0].Id() is 1
 			assert.ok data[0].Ids[0].ParameterGroups[0].Value[0].Timestamp() is "AAAAAAAGj7E="
 
-			server.restore()
+			sandbox.restore()
 			QUnit.start()
 		promise.catch ()->
 			assert.ok false, "retrieve failed"
-			server.restore()
+			sandbox.restore()
 			QUnit.start()
 		setTimeout(()->
+			
 			server.respond()
 		1000)
 	QUnit.asyncTest "breezeRetrieve get collection", (assert)->
-		server = sinon.fakeServer.create();
+		sandbox=sinon.sandbox.create()
+		sandbox.useFakeServer()
+		server = sandbox.server
+		
+		sourceDefer = Q.defer()
+		sandbox.stub(storeStubber, "mergeData").returnsArg 1
+		
 		breezeRetriever.initMe [
 			"http://localhost:41374/breeze/history"
 		]
@@ -152,10 +171,16 @@ require [
 			"type":"HistoryZone"
 		]
 		promise.done (data)->
-			assert.ok true
-			#assert.ok data[0].Type is "Application", "application returned"
-			#assert.ok data.length is 1 
-			#assert.ok data[0].Ids[0].Key is 1
+			assert.ok storeStubber.mergeData.calledOnce, "store mergeData called once"
+			assert.ok storeStubber.mergeData.args[0][0] is "HistoryBatch", "HistoryBatch stored"
+
+			assert.ok storeStubber.mergeData.args[0][1].Name() is "gggg", "HistoryBatch stored"
+			assert.ok data[0].Type is "HistoryZone", "application returned"
+			assert.ok data.length is 1 
+			assert.ok data[0].Collections[0].Collection is "Batches"
+			assert.ok data[0].Collections[0].Ids.length is 1
+			assert.ok data[0].Collections[0].Ids[0].Key is 1
+			assert.ok data[0].Collections[0].Ids[0].ParameterGroups.length is 1
 			#assert.ok data[0].Ids.length is 1
 			#assert.ok data[0].Ids[0].ParameterGroups.length is 1
 			#assert.ok data[0].Ids[0].ParameterGroups[0].Name is "Root:Application:0"
@@ -171,6 +196,7 @@ require [
 			QUnit.start()
 
 		setTimeout(()->
+			sourceDefer.resolve()
 			server.respond()
 		1000)
 
