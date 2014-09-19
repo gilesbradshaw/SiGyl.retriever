@@ -45,7 +45,7 @@
 
   require(["knockout", "linq", "retriever", "Q", "observableExtensions", "rx", "rx.joinpatterns", "knockout.rx", "sinonie", "knockout.punches"], function(ko, linq, Retriever, Q, observableExtensions, rx) {
     ko.punches.enableAll();
-    return QUnit.asyncTest("fetch and subscribe to data", function(assert) {
+    QUnit.asyncTest("fetch and subscribe to data", function(assert) {
       var sandbox;
       sandbox = sinon.sandbox.create();
       return Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).done(function() {
@@ -56,6 +56,7 @@
           return roo.subscribe(function(value) {
             var application, both, koApplication, koSites, sites;
             assert.ok(value.Id() === 1);
+            ko.applyBindings(value);
             QUnit.start();
             return;
             koSites = value.Sites.any()();
@@ -78,6 +79,18 @@
               return QUnit.start();
             });
           });
+        });
+      });
+    });
+    return QUnit.asyncTest("bind to dom", function(assert) {
+      var sandbox;
+      sandbox = sinon.sandbox.create();
+      return Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).done(function() {
+        return observableExtensions.initMe().then(function() {
+          var ro, roo;
+          ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
+          roo = ro();
+          return ko.applyBindings(roo);
         });
       });
     });

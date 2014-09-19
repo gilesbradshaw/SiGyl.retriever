@@ -17,17 +17,30 @@ define [
 			if !retrieveSubjects[subscriptionDefinition]
 				subject=rx.Observable.create (observer)->
 					retrieveSubjects[subscriptionDefinition].observer = observer
-					()-> delete retrieveSubjects[subscriptionDefinition]
+					()-> 
+						delete retrieveSubjects[subscriptionDefinition]
+						source.getMe().invoke( 
+							"NewLeave"
+							subscriptionDefinition
+						)
 				
 				retrieveSubjects[subscriptionDefinition] = 
 					subject:subject
 					share: subject.share()
 					subscriptionDeferred: Q.defer()
-				setTimeout(
-					()->
-						if retrieveSubjects[subscriptionDefinition]
-							retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve ()->retrieveSubjects[subscriptionDefinition].share
-					10)
+				#source.getMe().invoke(
+				#	"NewJoin"
+				#	subscriptionDefinition
+				#)
+				source.getMe().invoke( 
+					"NewJoin"
+					subscriptionDefinition
+				).done(()->
+					if retrieveSubjects[subscriptionDefinition]
+						retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve ()->retrieveSubjects[subscriptionDefinition].share
+				).fail (err)->
+					if retrieveSubjects[subscriptionDefinition]
+						retrieveSubjects[subscriptionDefinition].subscriptionDeferred.reject err
 				
 			retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise
 			
@@ -93,6 +106,8 @@ define [
 			source.initMe().then ()->
 				source.getMe().on "change", (id,type,data)->
 					breezeRetriever.getMe().changeData(id,type,data).done (changed)->
+						if retrieveSubjects["#{type}:.:#{id}"]
+							retrieveSubjects["#{type}:.:#{id}"].observer.onNext changed.value
 						if changed
 							listener.getMe().addData retriever, changed
 							listener.getMe().cycle()

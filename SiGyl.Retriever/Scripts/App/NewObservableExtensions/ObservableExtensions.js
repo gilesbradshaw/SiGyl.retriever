@@ -33,7 +33,7 @@
       };
       return target;
     };
-    genericObservable = function(subscriptionDefinition, dataProcessor, baseQuery, typeManager) {
+    genericObservable = function(observableType, subscriptionDefinition, dataProcessor, baseQuery, typeManager) {
       var data, preObtained, retrieverPromise, subscribedDeferred, subscribedPromise, _mergeFuncs, _queryFuncs;
       subscribedDeferred = Q.defer();
       subscribedPromise = subscribedDeferred.promise;
@@ -41,7 +41,7 @@
       _mergeFuncs = [];
       preObtained = void 0;
       retrieverPromise = Q.defer();
-      data = ko.observableArray().extend({
+      data = observableType().extend({
         listener: {
           subscribeActions: function() {
             var disposer;
@@ -75,10 +75,7 @@
       return {
         data: data,
         clearQuery: function() {
-          _queryFuncs = [];
-          if (baseQuery) {
-            return _queryFuncs.push(baseQuery());
-          }
+          return _queryFuncs = [];
         },
         makeQuery: function(queryFunc) {
           return _queryFuncs.push(queryFunc);
@@ -102,14 +99,28 @@
       };
     };
     observableExtensions = {
-      testManyObservable: function(subscriptionDefinition) {
+      testManyObservable: function(subscriptionDefinition, type) {
         return function() {
           var observable;
-          observable = genericObservable(function() {
+          observable = genericObservable(ko.observableArray, function() {
             return subscriptionDefinition;
-          }, function(data, item) {
-            return data.push(item);
-          });
+          }, function(data, items, preItems) {
+            var item, _i, _j, _len, _len1, _results;
+            for (_i = 0, _len = items.length; _i < _len; _i++) {
+              item = items[_i];
+              data.push(item);
+            }
+            if (preItems) {
+              _results = [];
+              for (_j = 0, _len1 = preItems.length; _j < _len1; _j++) {
+                item = preItems[_j];
+                _results.push(data.push(item));
+              }
+              return _results;
+            }
+          }, function() {
+            return "initialQuery";
+          }, entityManager.getType(type));
           return {
             root: observable.data.extend({
               base: {
@@ -130,8 +141,8 @@
         return function() {
           var observable, typeManager;
           typeManager = entityManager.getType(type);
-          observable = genericObservable(function() {
-            return "" + type + ":" + id;
+          observable = genericObservable(ko.observable, function() {
+            return "" + type + ":.:" + id;
           }, function(data, items, preItems) {
             var item;
             if (items && items.length) {
@@ -166,13 +177,11 @@
       initMe: function() {
         var deferred;
         deferred = Q.defer();
-        require(["breezeEntityManagers"], function(breezeEntityManagers) {
-          return breezeEntityManagers.getMe().then(function(em) {
+        require(["retriever", "breezeEntityManagers"], function(r, br) {
+          retriever = r.getMe();
+          return br.getMe().then(function(em) {
             entityManager = em;
-            return require(["retriever"], function(r) {
-              retriever = r.getMe();
-              return deferred.resolve();
-            });
+            return deferred.resolve();
           });
         });
         return deferred.promise;

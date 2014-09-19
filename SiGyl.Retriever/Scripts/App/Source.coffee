@@ -11,9 +11,10 @@ define [
 	
 
 	source=
-		invoke:(method,rindex,joins,collectionJoins)->
+		
+		invoke:(method,spec)->
 			#hubStart.then ()->
-			crossProxy.invoke method,rindex,joins,collectionJoins
+			crossProxy.invoke method,spec
 		"on":(event,callback)->crossProxy.on event,callback
 	getMe:->source
 	initMe:->

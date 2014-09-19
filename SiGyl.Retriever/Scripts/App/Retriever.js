@@ -10,7 +10,8 @@
           subject = rx.Observable.create(function(observer) {
             retrieveSubjects[subscriptionDefinition].observer = observer;
             return function() {
-              return delete retrieveSubjects[subscriptionDefinition];
+              delete retrieveSubjects[subscriptionDefinition];
+              return source.getMe().invoke("NewLeave", subscriptionDefinition);
             };
           });
           retrieveSubjects[subscriptionDefinition] = {
@@ -18,13 +19,17 @@
             share: subject.share(),
             subscriptionDeferred: Q.defer()
           };
-          setTimeout(function() {
+          source.getMe().invoke("NewJoin", subscriptionDefinition).done(function() {
             if (retrieveSubjects[subscriptionDefinition]) {
               return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve(function() {
                 return retrieveSubjects[subscriptionDefinition].share;
               });
             }
-          }, 10);
+          }).fail(function(err) {
+            if (retrieveSubjects[subscriptionDefinition]) {
+              return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.reject(err);
+            }
+          });
         }
         return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise;
       },
@@ -109,6 +114,9 @@
           return source.initMe().then(function() {
             source.getMe().on("change", function(id, type, data) {
               return breezeRetriever.getMe().changeData(id, type, data).done(function(changed) {
+                if (retrieveSubjects["" + type + ":.:" + id]) {
+                  retrieveSubjects["" + type + ":.:" + id].observer.onNext(changed.value);
+                }
                 if (changed) {
                   listener.getMe().addData(retriever, changed);
                   return listener.getMe().cycle();

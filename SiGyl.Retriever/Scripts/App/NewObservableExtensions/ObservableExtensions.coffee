@@ -34,7 +34,7 @@ define [
 
 
 
-	genericObservable=(subscriptionDefinition, dataProcessor, baseQuery,typeManager)->
+	genericObservable=(observableType, subscriptionDefinition, dataProcessor, baseQuery,typeManager)->
 		subscribedDeferred= Q.defer()
 		subscribedPromise = subscribedDeferred.promise
 		_queryFuncs=[]
@@ -42,7 +42,7 @@ define [
 		preObtained= undefined
 		
 		retrieverPromise = Q.defer()
-		data=ko.observableArray().extend
+		data=observableType().extend
 				listener:
 					subscribeActions:->
 						disposer = undefined
@@ -61,8 +61,7 @@ define [
 		data:data
 		clearQuery:()->
 			_queryFuncs=[]
-			if baseQuery
-				_queryFuncs.push baseQuery()
+			
 		makeQuery:(queryFunc)->
 			_queryFuncs.push queryFunc
 		makeMergeFunc:(mergeFunc)->
@@ -81,11 +80,19 @@ define [
 		
 
 	observableExtensions= 
-		testManyObservable:(subscriptionDefinition)->
+		testManyObservable:(subscriptionDefinition, type)->
 			()->
 				observable= genericObservable(
+					ko.observableArray
 					()->subscriptionDefinition
-					(data,item)->data.push item
+					(data,items,preItems)->
+						for item in items
+							data.push item
+						if preItems
+							for item in preItems
+								data.push item
+					()->"initialQuery"
+					entityManager.getType type
 				)
 				root:observable.data.extend
 					base:
@@ -100,7 +107,8 @@ define [
 			()->
 				typeManager = entityManager.getType type
 				observable= genericObservable(
-					()->"#{type}:#{id}"
+					ko.observable
+					()->"#{type}:.:#{id}"
 					(data,items, preItems)->
 						if items && items.length
 							item= typeManager.store.mergeData type, items[items.length-1]
@@ -122,12 +130,12 @@ define [
 	getMe:->observableExtensions
 	initMe:->
 		deferred=Q.defer()
-		require ["breezeEntityManagers"],(breezeEntityManagers)->
-			breezeEntityManagers.getMe().then (em)->
+		require ["retriever","breezeEntityManagers"], (r,br)->
+			retriever=r.getMe()
+			br.getMe().then (em)->
 				entityManager=em
-				require ["retriever"], (r)->
-					retriever=r.getMe()
-					deferred.resolve()
+				
+				deferred.resolve()
 		#ObservableExtensions.modelExtensions={}
 		deferred.promise
 

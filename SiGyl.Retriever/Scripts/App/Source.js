@@ -4,8 +4,8 @@
     crossConnection = $.hubConnection("http://localhost:41374/");
     crossProxy = crossConnection.createHubProxy("superBatch");
     source = {
-      invoke: function(method, rindex, joins, collectionJoins) {
-        return crossProxy.invoke(method, rindex, joins, collectionJoins);
+      invoke: function(method, spec) {
+        return crossProxy.invoke(method, spec);
       },
       "on": function(event, callback) {
         return crossProxy.on(event, callback);

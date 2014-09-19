@@ -16,18 +16,11 @@
 
 	<div id="qunit-fixture"></div>
 
-
-	<div style="display:none" data-bind="attr:{style:'display:block'}">
-		<h1>{{Name}}</h1>
-		{{#with:Application}}
-		<div>{{Name}}</div>
-		{{/with}}
-		<ul>
-			{{#foreach:Sites.base()().order()("Id").page()(1)}}
-			<li>{{Name}}</li>
-			{{/foreach}}
-		</ul>
-	</div>
+	{{#with:root.retrieve()}}
+	{{#with:retrieved()}}
+	<h1>{{Name}}</h1>
+	{{/with}}
+	{{/with}}
 	
 </body>
 

@@ -68,6 +68,7 @@ require [
 				roo= ro().root.retrieve().retrieved()
 				roo.subscribe (value)->
 					assert.ok value.Id()==1
+					ko.applyBindings value
 					QUnit.start()
 					return
 					koSites=value.Sites.any()() #an observablearray of sites
@@ -84,3 +85,16 @@ require [
 						QUnit.start()
 						
 
+	QUnit.asyncTest "bind to dom", (assert)->
+		sandbox= sinon.sandbox.create()
+		Retriever.initMe( [
+			"http://localhost:41374/breeze/configuration"
+			"http://localhost:41374/breeze/runtime"
+			"http://localhost:41374/breeze/history"
+		]).done ()->
+
+
+			observableExtensions.initMe().then ()->
+				ro = observableExtensions.getMe().rootObservable(1, "Enterprise")
+				roo= ro()
+				ko.applyBindings roo
