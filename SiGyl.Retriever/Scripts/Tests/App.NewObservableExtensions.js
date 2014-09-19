@@ -23,12 +23,13 @@
       knockout: "knockout-3.2.0.debug",
       "knockout.punches": "knockout.punches",
       observableExtensions: "app/newobservableExtensions/observableExtensions",
-      "observableExtensions.listener": "App/ObservableExtensions/listener"
+      "observableExtensions.listener": "App/ObservableExtensions/listener",
+      "utils": "app/utils"
     }
   });
 
   require(["rx", "Q", "rx.binding"], function(rx, Q) {
-    var retrieveSubjects, retriever;
+    var breezeEntityManagers, retrieveSubjects, retriever;
     retrieveSubjects = {};
     retriever = {
       subscriber: function(subscriptionDefinition) {
@@ -47,7 +48,9 @@
           };
           setTimeout(function() {
             if (retrieveSubjects[subscriptionDefinition]) {
-              return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve(retrieveSubjects[subscriptionDefinition].share);
+              return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve(function() {
+                return retrieveSubjects[subscriptionDefinition].share;
+              });
             }
           }, 1);
         }
@@ -72,6 +75,16 @@
         }
       };
     });
+    breezeEntityManagers = {
+      getStore: function(type) {},
+      getType: function(type) {},
+      getCollectionType: function(type) {}
+    };
+    define("breezeEntityManagers", [], function() {
+      return {
+        getMe: Q(breezeEntityManagers)
+      };
+    });
     return require(["linq", "knockout", "observableExtensions", "knockout.punches", "sinon", "sinonie", "retriever"], function(linq, ko, observableExtensions, configurationMetaData, runtimeMetaData, historyMetaData, utils) {
       ko.punches.enableAll();
       QUnit.asyncTest("check linq", function(assert) {
@@ -84,7 +97,7 @@
         sandbox.spy(retriever, "retrieve");
         observableExtensions.initMe().then(function() {
           var subscription;
-          subscription = observableExtensions.getMe().manyObservable("rsub")().root.base("base!!!").order("order!!!!!!!!").retrieve().retrieved().subscribe(function(data) {
+          subscription = observableExtensions.getMe().testManyObservable("rsub")().root.base("base!!!").order("order!!!!!!!!").retrieve().retrieved().subscribe(function(data) {
             return received1 = data;
           });
           assert.ok(received1.length === 0, "no data received yet");
@@ -126,24 +139,23 @@
         });
         return clock.tick(4);
       });
-      QUnit.asyncTest("rsub", function(assert) {
-        return observableExtensions.manyObservable("rsub").base("ok").order("ok2").subscribe(function() {});
-      });
       return QUnit.asyncTest("bind to dom", function(assert) {
-        var x;
-        x = 0;
-        setInterval(function() {
-          if (retrieveSubjects.rsub && retrieveSubjects.rsub.observer) {
-            return retrieveSubjects.rsub.observer.onNext("yabadabadaba " + (x++));
-          }
-        }, 1000);
-        return ko.applyBindings({
-          base1: ko.observable('base1'),
-          base2: ko.observable('base2'),
-          order1: ko.observable('order1'),
-          order2: ko.observable('order2'),
-          sub1: observableExtensions.manyObservable("rsub"),
-          sub2: observableExtensions.manyObservable("rsub")
+        return observableExtensions.initMe().then(function() {
+          var x;
+          x = 0;
+          setInterval(function() {
+            if (retrieveSubjects.rsub && retrieveSubjects.rsub.observer) {
+              return retrieveSubjects.rsub.observer.onNext("yabadabadaba " + (x++));
+            }
+          }, 1000);
+          return ko.applyBindings({
+            base1: ko.observable('base1'),
+            base2: ko.observable('base2'),
+            order1: ko.observable('order1'),
+            order2: ko.observable('order2'),
+            sub1: observableExtensions.getMe().testManyObservable("rsub"),
+            sub2: observableExtensions.getMe().testManyObservable("rsub")
+          });
         });
       });
     });

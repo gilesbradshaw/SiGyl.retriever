@@ -6,12 +6,31 @@ define [
 	"listener"
 	"source"
 	"observableExtensions"
-],(Q,linq,breezeRetriever, listener,source,ObservableExtensions) ->
+	"rx.binding"
+],(Q,linq,breezeRetriever, listener,source,ObservableExtensions, rx) ->
 
 	
 	rindex=0
-
-	retriever=	
+	retrieveSubjects={}
+	retriever=
+		subscriber:(subscriptionDefinition)->
+			if !retrieveSubjects[subscriptionDefinition]
+				subject=rx.Observable.create (observer)->
+					retrieveSubjects[subscriptionDefinition].observer = observer
+					()-> delete retrieveSubjects[subscriptionDefinition]
+				
+				retrieveSubjects[subscriptionDefinition] = 
+					subject:subject
+					share: subject.share()
+					subscriptionDeferred: Q.defer()
+				setTimeout(
+					()->
+						if retrieveSubjects[subscriptionDefinition]
+							retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve ()->retrieveSubjects[subscriptionDefinition].share
+					10)
+				
+			retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise
+			
 		retrieve:(tokens)->
 			myRindex=rindex++
 			deferred = Q.defer()

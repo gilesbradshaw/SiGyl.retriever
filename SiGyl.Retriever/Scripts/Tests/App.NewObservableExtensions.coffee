@@ -19,9 +19,8 @@
 		knockout:"knockout-3.2.0.debug"
 		"knockout.punches":"knockout.punches"
 		observableExtensions:"app/newobservableExtensions/observableExtensions"
-	
-
 		"observableExtensions.listener": "App/ObservableExtensions/listener"
+		"utils":"app/utils"
 		
 
 require ["rx","Q","rx.binding"], (rx,Q)->
@@ -42,7 +41,7 @@ require ["rx","Q","rx.binding"], (rx,Q)->
 				setTimeout(
 					()->
 						if retrieveSubjects[subscriptionDefinition]
-							retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve retrieveSubjects[subscriptionDefinition].share
+							retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve ()->retrieveSubjects[subscriptionDefinition].share
 					1)
 			retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise
 			
@@ -54,12 +53,23 @@ require ["rx","Q","rx.binding"], (rx,Q)->
 				10
 			)
 			deferred.promise
+
 			
 			
 
 	define "retriever",[],()->
 		getMe:->retriever
 		initMe:->Q()
+
+
+	breezeEntityManagers=
+		getStore:(type)->
+		getType:(type)->
+		getCollectionType:(type)->
+
+	define "breezeEntityManagers",[],()->
+		getMe:Q breezeEntityManagers
+
 
 
 	require [
@@ -86,7 +96,7 @@ require ["rx","Q","rx.binding"], (rx,Q)->
 			observableExtensions.initMe().then ()->
 
 
-				subscription = observableExtensions.getMe().manyObservable("rsub")().root.base("base!!!").order("order!!!!!!!!").retrieve().retrieved().subscribe (data)->
+				subscription = observableExtensions.getMe().testManyObservable("rsub")().root.base("base!!!").order("order!!!!!!!!").retrieve().retrieved().subscribe (data)->
 					received1 = data
 				
 				assert.ok received1.length==0 , "no data received yet"
@@ -143,25 +153,20 @@ require ["rx","Q","rx.binding"], (rx,Q)->
 			#allow requirejs to get retriever not sue why 4 ms ticks needed
 			clock.tick 4
 
-
-
-		QUnit.asyncTest "rsub", (assert)->
-	
-			observableExtensions.manyObservable("rsub").base("ok").order("ok2").subscribe ->
 			
 		QUnit.asyncTest "bind to dom", (assert)->
-	
-			x=0
-			setInterval(()->
-				if retrieveSubjects.rsub and retrieveSubjects.rsub.observer
-					retrieveSubjects.rsub.observer.onNext "yabadabadaba #{x++}"
-			1000)
+			observableExtensions.initMe().then ()->
+				x=0
+				setInterval(()->
+					if retrieveSubjects.rsub and retrieveSubjects.rsub.observer
+						retrieveSubjects.rsub.observer.onNext "yabadabadaba #{x++}"
+				1000)
 
-			ko.applyBindings
-				base1:ko.observable 'base1'
-				base2:ko.observable 'base2'
-				order1:ko.observable 'order1'
-				order2:ko.observable 'order2'
-				sub1:observableExtensions.manyObservable("rsub")
-				sub2:observableExtensions.manyObservable("rsub")
+				ko.applyBindings
+					base1:ko.observable 'base1'
+					base2:ko.observable 'base2'
+					order1:ko.observable 'order1'
+					order2:ko.observable 'order2'
+					sub1:observableExtensions.getMe().testManyObservable("rsub")
+					sub2:observableExtensions.getMe().testManyObservable("rsub")
 	

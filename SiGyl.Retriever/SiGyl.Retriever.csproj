@@ -59,6 +59,7 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="NewFull.html" />
     <Content Include="NewObservableExtensions.html" />
     <Content Include="ObservableExtensions.html" />
     <Content Include="BreezeEntityManagers.html" />
@@ -237,6 +238,12 @@
     <Content Include="Scripts\Tests\App.ListenToken.min.js">
       <DependentUpon>App.ListenToken.coffee</DependentUpon>
     </Content>
+    <Content Include="Scripts\Tests\App.NewFull.js">
+      <DependentUpon>App.NewFull.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.NewFull.min.js">
+      <DependentUpon>App.NewFull.coffee</DependentUpon>
+    </Content>
     <Content Include="Scripts\Tests\App.NewObservableExtensions.js">
       <DependentUpon>App.NewObservableExtensions.coffee</DependentUpon>
     </Content>
@@ -350,6 +357,7 @@
     <Content Include="Scripts\Tests\App.ListenToken.coffee" />
     <Content Include="Scripts\Tests\App.Full.coffee" />
     <Content Include="Scripts\Tests\App.NewObservableExtensions.coffee" />
+    <Content Include="Scripts\Tests\App.NewFull.coffee" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

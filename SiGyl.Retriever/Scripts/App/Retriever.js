@@ -1,8 +1,33 @@
 (function() {
-  define(["Q", "linq", "breezeretriever", "listener", "source", "observableExtensions"], function(Q, linq, breezeRetriever, listener, source, ObservableExtensions) {
-    var retriever, rindex;
+  define(["Q", "linq", "breezeretriever", "listener", "source", "observableExtensions", "rx.binding"], function(Q, linq, breezeRetriever, listener, source, ObservableExtensions, rx) {
+    var retrieveSubjects, retriever, rindex;
     rindex = 0;
+    retrieveSubjects = {};
     retriever = {
+      subscriber: function(subscriptionDefinition) {
+        var subject;
+        if (!retrieveSubjects[subscriptionDefinition]) {
+          subject = rx.Observable.create(function(observer) {
+            retrieveSubjects[subscriptionDefinition].observer = observer;
+            return function() {
+              return delete retrieveSubjects[subscriptionDefinition];
+            };
+          });
+          retrieveSubjects[subscriptionDefinition] = {
+            subject: subject,
+            share: subject.share(),
+            subscriptionDeferred: Q.defer()
+          };
+          setTimeout(function() {
+            if (retrieveSubjects[subscriptionDefinition]) {
+              return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve(function() {
+                return retrieveSubjects[subscriptionDefinition].share;
+              });
+            }
+          }, 10);
+        }
+        return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise;
+      },
       retrieve: function(tokens) {
         var collectionJoins, deferred, i, joins, myRindex;
         myRindex = rindex++;

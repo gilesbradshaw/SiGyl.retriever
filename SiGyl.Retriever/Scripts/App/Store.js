@@ -27,10 +27,10 @@
         ret[property.name] = from[property.name];
       }
       utils.getMe().process(entityType.flexibleRelations, function(flexibleRelation) {
-        return ret[flexibleRelation.name] = modelExtensions[model.entityContainer.name].flexibleRelationObservable(ret, flexibleRelation.name, entityType);
+        return ret[flexibleRelation.name] = 'flexible';
       });
       utils.getMe().process(entityType.interModelRelations, function(interModelRelation) {
-        return ret[interModelRelation.name] = modelExtensions[model.entityContainer.name].interModelRelationObservable(ret, interModelRelation.name, entityType);
+        return ret[interModelRelation.name] = 'intermodel';
       });
       utils.getMe().process(entityType.navigationProperty, function(navigationProperty) {
         var association, toEnd;
@@ -39,14 +39,14 @@
           return e.role === navigationProperty.toRole;
         });
         if (toEnd.multiplicity === "*") {
-          ret[navigationProperty.name] = modelExtensions[model.entityContainer.name].manyObservable(ret, entityType.name, navigationProperty.name, entityType);
+          ret[navigationProperty.name] = 'navprop';
           return ret[navigationProperty.name]._navigationProperty = (function(p) {
             return function() {
               return p;
             };
           })(navigationProperty);
         } else {
-          return ret[navigationProperty.name] = modelExtensions[model.entityContainer.name].singleObservable(ret, navigationProperty.name, entityType);
+          return ret[navigationProperty.name] = 'navprop';
         }
       });
       if (entityType.histories) {
@@ -54,7 +54,7 @@
         _ref1 = entityType.histories;
         for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
           history = _ref1[_j];
-          ret._histories[history.name] = modelExtensions.history.rootObservable(getKey(entityType, from), history.name, true);
+          ret._histories[history.name] = 'his';
         }
       }
       if (entityType.Of) {

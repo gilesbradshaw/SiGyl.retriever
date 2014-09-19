@@ -33,22 +33,22 @@ define [
 			
 		#if entityType.flexibleRelations
 		utils.getMe().process entityType.flexibleRelations, (flexibleRelation)->
-			ret[flexibleRelation.name] = modelExtensions[model.entityContainer.name].flexibleRelationObservable ret, flexibleRelation.name, entityType
+			ret[flexibleRelation.name] = 'flexible' # modelExtensions[model.entityContainer.name].flexibleRelationObservable ret, flexibleRelation.name, entityType
 		utils.getMe().process entityType.interModelRelations, (interModelRelation)->
-			ret[interModelRelation.name] = modelExtensions[model.entityContainer.name].interModelRelationObservable ret, interModelRelation.name, entityType
+			ret[interModelRelation.name] ='intermodel'# modelExtensions[model.entityContainer.name].interModelRelationObservable ret, interModelRelation.name, entityType
 		utils.getMe().process entityType.navigationProperty, (navigationProperty)->
 			association=model.associations[navigationProperty.relationship.split('.')[1]]
 			toEnd= linq.From(association.end).Single((e)->e.role is navigationProperty.toRole)
 			if toEnd.multiplicity is "*"
-				ret[navigationProperty.name] = modelExtensions[model.entityContainer.name].manyObservable ret, entityType.name, navigationProperty.name, entityType
+				ret[navigationProperty.name] = 'navprop'# modelExtensions[model.entityContainer.name].manyObservable ret, entityType.name, navigationProperty.name, entityType
 				ret[navigationProperty.name]._navigationProperty  = ((p)->()->p)(navigationProperty)
 			else
-				ret[navigationProperty.name] = modelExtensions[model.entityContainer.name].singleObservable ret, navigationProperty.name, entityType
+				ret[navigationProperty.name] = 'navprop'# modelExtensions[model.entityContainer.name].singleObservable ret, navigationProperty.name, entityType
 		#this is a bit of a frig
 		if entityType.histories
 			ret._histories ={}
 			for history in entityType.histories
-				ret._histories[history.name] = modelExtensions.history.rootObservable getKey(entityType,from), history.name, true
+				ret._histories[history.name] = 'his'# modelExtensions.history.rootObservable getKey(entityType,from), history.name, true
 		#so is this
 		if entityType.Of
 			ret._runtime = modelExtensions.runtime.rootObservable from.RuntimeId, entityType.Of, true
