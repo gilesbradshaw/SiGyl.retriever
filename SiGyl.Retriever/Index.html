@@ -23,7 +23,7 @@
 		<div>{{Name}}</div>
 		{{/with}}
 		<ul>
-			{{#foreach:Sites.any()()}}
+			{{#foreach:Sites.base()().order()("Id").page()(1)}}
 			<li>{{Name}}</li>
 			{{/foreach}}
 		</ul>

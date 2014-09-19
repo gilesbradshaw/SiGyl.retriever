@@ -1,10 +1,7 @@
 
 define [
-	"jquery"
 	"knockout"
-	"listenToken"
-	"linq"
-],($,ko,ListenToken,ex,linqt) ->
+],(ko) ->
 
 
 	#listener allows methods to be added when an observable is subscribed and unsubscribed

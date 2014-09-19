@@ -58,7 +58,6 @@ define [
 							name=name
 							myListenToken= ret.__getListenToken()
 							myInitialSubscribe = myListenToken.data.subscribe (x)->
-								
 								myTrigger myTrigger()+1
 								if myInitialSubscribe
 									myInitialSubscribe.dispose()

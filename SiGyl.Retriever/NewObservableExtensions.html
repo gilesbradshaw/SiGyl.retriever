@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>New ObservableExtensions</title>
+	<script src="Scripts/qunit-1.15.0.js"></script>
+	<script src="Scripts/qunit-promises.js"></script>
+	<script data-main="/Scripts/Tests/App.NewObservableExtensions" type="text/javascript" src="/Scripts/require.js"></script>
+	<link href="Css/qunit-1.15.0.css" rel="stylesheet" />
+
+</head>
+
+<body>
+
+	<div id="qunit"></div>
+
+	<div id="qunit-fixture"></div>
+	<div>
+		<input type="text" value="{{base1}}" />base1:{{base1}}
+		<input type="text" value="{{base2}}" />base2:{{base2}}
+	</div>
+	<div>
+		<input type="text" value="{{order1}}" />order1:{{order1}}
+		<input type="text" value="{{order2}}" />order2:{{order2}}
+	</div>
+	{{#with:sub1()}}
+	{{#with:root.base($parent.base1).order($parent.order1).retrieve()}}
+	<ul>
+		{{#foreach:retrieved()}}
+		<li>{{$data}}</li>
+		{{/foreach}}
+	</ul>
+	{{/with}}
+	{{/with}}
+
+	{{#with:sub1()}}
+	{{#with:root.base($parent.base2).order($parent.order2).retrieve()}}
+	<ul>
+		{{#foreach:retrieved()}}
+		<li>{{$data}}</li>
+		{{/foreach}}
+	</ul>
+	{{/with}}
+	{{/with}}
+	
+	
+	
+</body>
+
+</html>
+
+

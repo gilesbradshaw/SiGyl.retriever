@@ -8,8 +8,8 @@
 		sinonie:['sinon']
 		sigr: ["jquery"]
 	paths:
-		rx:"rx"
-		"rx.joinpatterns":"rx.joinpatterns"
+		rx:"rx/rx"
+		"rx.joinpatterns":"rx/rx.joinpatterns"
 		"knockout.rx":"knockout.rx"
 		linq:"linqjs-amd"
 		sinon:"sinon-1.10.3"
@@ -83,7 +83,7 @@ require [
 
 				sites = koSites.toObservableWithReplyLatest().where((x)->x)
 				application = koApplication.toObservableWithReplyLatest().where((x)->x)
-				both = rx.Observable.when (sites.and application).thenDo (site, application)->
+				both = rx.Observable.when (sites.and application).then (site, application)->
 					site:site,
 					application:application
 				both.subscribe (xx)->

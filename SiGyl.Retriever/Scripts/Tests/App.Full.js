@@ -12,8 +12,8 @@
       sigr: ["jquery"]
     },
     paths: {
-      rx: "rx",
-      "rx.joinpatterns": "rx.joinpatterns",
+      rx: "rx/rx",
+      "rx.joinpatterns": "rx/rx.joinpatterns",
       "knockout.rx": "knockout.rx",
       linq: "linqjs-amd",
       sinon: "sinon-1.10.3",
@@ -71,7 +71,7 @@
           application = koApplication.toObservableWithReplyLatest().where(function(x) {
             return x;
           });
-          both = rx.Observable.when((sites.and(application)).thenDo(function(site, application) {
+          both = rx.Observable.when((sites.and(application)).then(function(site, application) {
             return {
               site: site,
               application: application

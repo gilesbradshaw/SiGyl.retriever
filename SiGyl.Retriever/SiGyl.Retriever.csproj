@@ -59,6 +59,7 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="NewObservableExtensions.html" />
     <Content Include="ObservableExtensions.html" />
     <Content Include="BreezeEntityManagers.html" />
     <Content Include="BreezeRetriever.html" />
@@ -74,6 +75,12 @@
     </Content>
     <Content Include="Scripts\App\ListenToken.min.js">
       <DependentUpon>ListenToken.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\NewObservableExtensions\ObservableExtensions.js">
+      <DependentUpon>ObservableExtensions.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\App\NewObservableExtensions\ObservableExtensions.min.js">
+      <DependentUpon>ObservableExtensions.coffee</DependentUpon>
     </Content>
     <Content Include="Scripts\App\ObservableExtensions\Base.js">
       <DependentUpon>Base.coffee</DependentUpon>
@@ -160,26 +167,46 @@
     <Content Include="Scripts\knockout.punches.js" />
     <Content Include="Scripts\knockout.punches.min.js" />
     <Content Include="Scripts\knockout.rx.js" />
-    <Content Include="Scripts\rx.aggregates.js" />
-    <Content Include="Scripts\rx.aggregates.min.js" />
-    <Content Include="Scripts\rx.binding.js" />
-    <Content Include="Scripts\rx.binding.min.js" />
-    <Content Include="Scripts\rx.coincidence.js" />
-    <Content Include="Scripts\rx.coincidence.min.js" />
-    <Content Include="Scripts\rx.compat.js" />
-    <Content Include="Scripts\rx.compat.min.js" />
-    <Content Include="Scripts\rx.experimental.js" />
-    <Content Include="Scripts\rx.experimental.min.js" />
-    <Content Include="Scripts\rx.joinpatterns.js" />
-    <Content Include="Scripts\rx.joinpatterns.min.js" />
-    <Content Include="Scripts\rx.js" />
-    <Content Include="Scripts\rx.min.js" />
-    <Content Include="Scripts\rx.testing.js" />
-    <Content Include="Scripts\rx.testing.min.js" />
-    <Content Include="Scripts\rx.time.js" />
-    <Content Include="Scripts\rx.time.min.js" />
-    <Content Include="Scripts\rx.virtualtime.js" />
-    <Content Include="Scripts\rx.virtualtime.min.js" />
+    <Content Include="Scripts\rx\rx.aggregates.js" />
+    <Content Include="Scripts\rx\rx.aggregates.min.js" />
+    <Content Include="Scripts\rx\rx.all.compat.js" />
+    <Content Include="Scripts\rx\rx.all.compat.min.js" />
+    <Content Include="Scripts\rx\rx.all.js" />
+    <Content Include="Scripts\rx\rx.all.min.js" />
+    <Content Include="Scripts\rx\rx.async.compat.js" />
+    <Content Include="Scripts\rx\rx.async.compat.min.js" />
+    <Content Include="Scripts\rx\rx.async.js" />
+    <Content Include="Scripts\rx\rx.async.min.js" />
+    <Content Include="Scripts\rx\rx.backpressure.js" />
+    <Content Include="Scripts\rx\rx.backpressure.min.js" />
+    <Content Include="Scripts\rx\rx.binding.js" />
+    <Content Include="Scripts\rx\rx.binding.min.js" />
+    <Content Include="Scripts\rx\rx.coincidence.js" />
+    <Content Include="Scripts\rx\rx.coincidence.min.js" />
+    <Content Include="Scripts\rx\rx.compat.js" />
+    <Content Include="Scripts\rx\rx.compat.min.js" />
+    <Content Include="Scripts\rx\rx.core.compat.js" />
+    <Content Include="Scripts\rx\rx.core.compat.min.js" />
+    <Content Include="Scripts\rx\rx.core.js" />
+    <Content Include="Scripts\rx\rx.core.min.js" />
+    <Content Include="Scripts\rx\rx.experimental.js" />
+    <Content Include="Scripts\rx\rx.experimental.min.js" />
+    <Content Include="Scripts\rx\rx.joinpatterns.js" />
+    <Content Include="Scripts\rx\rx.joinpatterns.min.js" />
+    <Content Include="Scripts\rx\rx.js" />
+    <Content Include="Scripts\rx\rx.lite.compat.js" />
+    <Content Include="Scripts\rx\rx.lite.compat.min.js" />
+    <Content Include="Scripts\rx\rx.lite.extras.js" />
+    <Content Include="Scripts\rx\rx.lite.extras.min.js" />
+    <Content Include="Scripts\rx\rx.lite.js" />
+    <Content Include="Scripts\rx\rx.lite.min.js" />
+    <Content Include="Scripts\rx\rx.min.js" />
+    <Content Include="Scripts\rx\rx.testing.js" />
+    <Content Include="Scripts\rx\rx.testing.min.js" />
+    <Content Include="Scripts\rx\rx.time.js" />
+    <Content Include="Scripts\rx\rx.time.min.js" />
+    <Content Include="Scripts\rx\rx.virtualtime.js" />
+    <Content Include="Scripts\rx\rx.virtualtime.min.js" />
     <Content Include="Scripts\Tests\App.BreezeEntityManagers.js">
       <DependentUpon>App.BreezeEntityManagers.coffee</DependentUpon>
     </Content>
@@ -209,6 +236,12 @@
     </Content>
     <Content Include="Scripts\Tests\App.ListenToken.min.js">
       <DependentUpon>App.ListenToken.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.NewObservableExtensions.js">
+      <DependentUpon>App.NewObservableExtensions.coffee</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Tests\App.NewObservableExtensions.min.js">
+      <DependentUpon>App.NewObservableExtensions.coffee</DependentUpon>
     </Content>
     <Content Include="Scripts\Tests\App.ObservableExtensions.js">
       <DependentUpon>App.ObservableExtensions.coffee</DependentUpon>
@@ -302,6 +335,7 @@
     <Content Include="Scripts\App\ObservableExtensions\SelectSingle.coffee" />
     <Content Include="Scripts\App\ObservableExtensions\Title.coffee" />
     <Content Include="Scripts\App\Utils.coffee" />
+    <Content Include="Scripts\App\NewObservableExtensions\ObservableExtensions.coffee" />
     <None Include="Scripts\jquery-2.1.1.intellisense.js" />
     <Content Include="Scripts\App\Store.js">
       <DependentUpon>Store.coffee</DependentUpon>
@@ -315,6 +349,7 @@
     <Content Include="Scripts\Tests\App.BreezeEntityManagers.coffee" />
     <Content Include="Scripts\Tests\App.ListenToken.coffee" />
     <Content Include="Scripts\Tests\App.Full.coffee" />
+    <Content Include="Scripts\Tests\App.NewObservableExtensions.coffee" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -355,11 +390,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="css\" />
-  </ItemGroup>
-  <ItemGroup>
-    <TypeScriptCompile Include="Scripts\rx-lite.d.ts" />
-    <TypeScriptCompile Include="Scripts\rx.d.ts" />
-    <TypeScriptCompile Include="Scripts\rx.joinpatterns.d.ts" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

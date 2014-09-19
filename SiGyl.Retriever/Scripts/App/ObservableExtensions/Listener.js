@@ -1,5 +1,5 @@
 (function() {
-  define(["jquery", "knockout", "listenToken", "linq"], function($, ko, ListenToken, ex, linqt) {
+  define(["knockout"], function(ko) {
     return ko.extenders.listener = function(target, options) {
       var oldSubscribe, subscribeActions, subscriptions;
       if (options.subscribeActions) {
