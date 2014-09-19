@@ -43,7 +43,7 @@
     }
   });
 
-  require(["knockout", "linq", "retriever", "Q", "observableExtensions", "rx", "rx.joinpatterns", "knockout.rx", "sinonie", "knockout.punches"], function(ko, linq, Retriever, Q, observableExtensions, rx) {
+  require(["knockout", "linq", "breezeEntityManagers", "Q", "observableExtensions", "rx", "rx.joinpatterns", "knockout.rx", "sinonie", "knockout.punches"], function(ko, linq, Retriever, Q, observableExtensions, rx) {
     ko.punches.enableAll();
     QUnit.asyncTest("fetch and subscribe to data", function(assert) {
       var sandbox;
@@ -75,7 +75,6 @@
             }));
             return both.subscribe(function(xx) {
               sandbox.restore();
-              ko.applyBindings(value);
               return QUnit.start();
             });
           });
@@ -90,7 +89,10 @@
           var ro, roo;
           ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
           roo = ro();
-          return ko.applyBindings(roo);
+          return ko.applyBindings({
+            value: roo,
+            hide: ko.observable(false)
+          });
         });
       });
     });

@@ -5,7 +5,6 @@ define [
 	"Q"
 	"linq"
 	"utils"
-	
 	"observableExtensions.listener"
 ],(ko,Q,linq,utils) ->
 
@@ -70,11 +69,11 @@ define [
 			preObtained=[]
 			subscribedPromise.then ()->
 				myQuery = _queryFuncs.reduce ((q,fn)->fn q), baseQuery()
-				typeManager.executeQuery(myQuery).then (retrievedData)->
-				#retriever.retrieve(myQuery).then (retrievedData)->
+				qex= typeManager.executeQuery(myQuery)
+				qex.then (retrievedData)->
 					dataProcessor data, retrievedData.results, preObtained
 					preObtained = undefined
-		
+				qex.fail (err)->alert err
 
 
 		
@@ -124,17 +123,59 @@ define [
 				root:observable.data.extend
 					retrieve:
 						retrieve:observable.retrieve
-
+		manyObservable:(item,type,collection)->
+			()->
+				typeManager = entityManager.getType type
+				collectionManager= typeManager.collectionManager collection
+				observable= genericObservable(
+					ko.observable
+					()->"#{type}:.#{collection}:#{item.Id()}"
+					(data,items, preItems)->
+						data items.map (i)-> typeManager.store.mergeData collectionManager.entityType.name, i
+						
+					()->
+						query = collectionManager.query item.Id()
+					typeManager
+				)
+				root:observable.data.extend
+					retrieve:
+						retrieve:observable.retrieve
+		singleObservable:(item,property,entityType)->
+			()->
+				typeManager = entityManager.getType entityType.name
+				singleManager= typeManager.singleManager property
+				observable= genericObservable(
+					ko.observable
+					()->"#{singleManager.entityType.name}:.:#{item.Id()}"
+					(data,items, preItems)->
+						if items && items.length
+							item= typeManager.store.mergeData singleManager.entityType.name, items[items.length-1]
+						if preItems && preItems.length
+							item= typeManager.store.mergeData singleManager.entityType.name, preItems[items.length-1]
+						data item
+					()->
+						query = singleManager.query item
+					typeManager
+				)
+				root:observable.data.extend
+					retrieve:
+						retrieve:observable.retrieve
+		manyObservable1:(id,type,collection)->
+			()->
+				root:ko.observableArray [
+					Name:'ok'
+				,
+					Name:'ahhh'
+				]
 	retriever=undefined
 	entityManager=undefined
 	getMe:->observableExtensions
 	initMe:->
 		deferred=Q.defer()
-		require ["retriever","breezeEntityManagers"], (r,br)->
-			retriever=r.getMe()
+		require ["breezeEntityManagers"], (br)->
 			br.getMe().then (em)->
 				entityManager=em
-				
+				retriever=em
 				deferred.resolve()
 		#ObservableExtensions.modelExtensions={}
 		deferred.promise

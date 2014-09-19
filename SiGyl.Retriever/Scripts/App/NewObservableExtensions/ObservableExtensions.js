@@ -86,13 +86,17 @@
         retrieve: function() {
           preObtained = [];
           return subscribedPromise.then(function() {
-            var myQuery;
+            var myQuery, qex;
             myQuery = _queryFuncs.reduce((function(q, fn) {
               return fn(q);
             }), baseQuery());
-            return typeManager.executeQuery(myQuery).then(function(retrievedData) {
+            qex = typeManager.executeQuery(myQuery);
+            qex.then(function(retrievedData) {
               dataProcessor(data, retrievedData.results, preObtained);
               return preObtained = void 0;
+            });
+            return qex.fail(function(err) {
+              return alert(err);
             });
           });
         }
@@ -166,6 +170,71 @@
             })
           };
         };
+      },
+      manyObservable: function(item, type, collection) {
+        return function() {
+          var collectionManager, observable, typeManager;
+          typeManager = entityManager.getType(type);
+          collectionManager = typeManager.collectionManager(collection);
+          observable = genericObservable(ko.observable, function() {
+            return "" + type + ":." + collection + ":" + (item.Id());
+          }, function(data, items, preItems) {
+            return data(items.map(function(i) {
+              return typeManager.store.mergeData(collectionManager.entityType.name, i);
+            }));
+          }, function() {
+            var query;
+            return query = collectionManager.query(item.Id());
+          }, typeManager);
+          return {
+            root: observable.data.extend({
+              retrieve: {
+                retrieve: observable.retrieve
+              }
+            })
+          };
+        };
+      },
+      singleObservable: function(item, property, entityType) {
+        return function() {
+          var observable, singleManager, typeManager;
+          typeManager = entityManager.getType(entityType.name);
+          singleManager = typeManager.singleManager(property);
+          observable = genericObservable(ko.observable, function() {
+            return "" + singleManager.entityType.name + ":.:" + (item.Id());
+          }, function(data, items, preItems) {
+            if (items && items.length) {
+              item = typeManager.store.mergeData(singleManager.entityType.name, items[items.length - 1]);
+            }
+            if (preItems && preItems.length) {
+              item = typeManager.store.mergeData(singleManager.entityType.name, preItems[items.length - 1]);
+            }
+            return data(item);
+          }, function() {
+            var query;
+            return query = singleManager.query(item);
+          }, typeManager);
+          return {
+            root: observable.data.extend({
+              retrieve: {
+                retrieve: observable.retrieve
+              }
+            })
+          };
+        };
+      },
+      manyObservable1: function(id, type, collection) {
+        return function() {
+          return {
+            root: ko.observableArray([
+              {
+                Name: 'ok'
+              }, {
+                Name: 'ahhh'
+              }
+            ])
+          };
+        };
       }
     };
     retriever = void 0;
@@ -177,10 +246,10 @@
       initMe: function() {
         var deferred;
         deferred = Q.defer();
-        require(["retriever", "breezeEntityManagers"], function(r, br) {
-          retriever = r.getMe();
+        require(["breezeEntityManagers"], function(br) {
           return br.getMe().then(function(em) {
             entityManager = em;
+            retriever = em;
             return deferred.resolve();
           });
         });

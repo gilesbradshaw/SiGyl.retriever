@@ -28,10 +28,6 @@ define [
 					subject:subject
 					share: subject.share()
 					subscriptionDeferred: Q.defer()
-				#source.getMe().invoke(
-				#	"NewJoin"
-				#	subscriptionDefinition
-				#)
 				source.getMe().invoke( 
 					"NewJoin"
 					subscriptionDefinition

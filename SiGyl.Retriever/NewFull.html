@@ -15,12 +15,32 @@
 	<div id="qunit"></div>
 
 	<div id="qunit-fixture"></div>
-
-	{{#with:root.retrieve()}}
-	{{#with:retrieved()}}
-	<h1>{{Name}}</h1>
-	{{/with}}
-	{{/with}}
+	<h1>{{hide}}</h1>
+	<input type="checkbox" checked="{{hide}}"/>
+	{{#ifnot:hide}}
+		{{#with:value.root.retrieve()}}
+			{{#with:retrieved()}}
+				{{#with:Application()}}
+					{{#with:root.retrieve()}}
+						{{#with:retrieved()}}
+							<h1>{{Name}}</h1>
+						{{/with}}
+					{{/with}}
+				{{/with}}
+			
+				<h1>{{Name}}</h1>
+				{{#with:Sites()}}
+					<ul>
+						{{#with:root.retrieve()}}
+							{{#foreach:retrieved()}}
+							<li>{{Name}}</li>
+							{{/foreach}}
+						{{/with}}
+					</ul>
+				{{/with}}
+			{{/with}}
+		{{/with}}
+	{{/if}}
 	
 </body>
 

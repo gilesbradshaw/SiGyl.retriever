@@ -42,7 +42,7 @@
 require [
 	"knockout"
 	"linq"
-	"retriever"
+	"breezeEntityManagers"
 	"Q"
 	"observableExtensions"
 	"rx"
@@ -81,7 +81,6 @@ require [
 						application:application
 					both.subscribe (xx)->
 						sandbox.restore()
-						ko.applyBindings value
 						QUnit.start()
 						
 
@@ -97,4 +96,6 @@ require [
 			observableExtensions.initMe().then ()->
 				ro = observableExtensions.getMe().rootObservable(1, "Enterprise")
 				roo= ro()
-				ko.applyBindings roo
+				ko.applyBindings
+					value:roo
+					hide:ko.observable false

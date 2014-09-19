@@ -40,10 +40,10 @@ define [
 			association=model.associations[navigationProperty.relationship.split('.')[1]]
 			toEnd= linq.From(association.end).Single((e)->e.role is navigationProperty.toRole)
 			if toEnd.multiplicity is "*"
-				ret[navigationProperty.name] = 'navprop'# modelExtensions[model.entityContainer.name].manyObservable ret, entityType.name, navigationProperty.name, entityType
+				ret[navigationProperty.name] = observableExtensionsMain.getMe().manyObservable ret,entityType.name,navigationProperty.name
 				ret[navigationProperty.name]._navigationProperty  = ((p)->()->p)(navigationProperty)
 			else
-				ret[navigationProperty.name] = 'navprop'# modelExtensions[model.entityContainer.name].singleObservable ret, navigationProperty.name, entityType
+				ret[navigationProperty.name]= observableExtensionsMain.getMe().singleObservable ret, navigationProperty.name, entityType
 		#this is a bit of a frig
 		if entityType.histories
 			ret._histories ={}

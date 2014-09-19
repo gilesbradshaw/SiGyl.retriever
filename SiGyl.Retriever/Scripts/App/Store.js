@@ -39,14 +39,14 @@
           return e.role === navigationProperty.toRole;
         });
         if (toEnd.multiplicity === "*") {
-          ret[navigationProperty.name] = 'navprop';
+          ret[navigationProperty.name] = observableExtensionsMain.getMe().manyObservable(ret, entityType.name, navigationProperty.name);
           return ret[navigationProperty.name]._navigationProperty = (function(p) {
             return function() {
               return p;
             };
           })(navigationProperty);
         } else {
-          return ret[navigationProperty.name] = 'navprop';
+          return ret[navigationProperty.name] = observableExtensionsMain.getMe().singleObservable(ret, navigationProperty.name, entityType);
         }
       });
       if (entityType.histories) {
