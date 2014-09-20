@@ -103,7 +103,8 @@ define [
 				source.getMe().on "change", (id,type,data)->
 					breezeRetriever.getMe().changeData(id,type,data).done (changed)->
 						if retrieveSubjects["#{type}:.:#{id}"]
-							retrieveSubjects["#{type}:.:#{id}"].observer.onNext changed.value
+							retrieveSubjects["#{type}:.:#{id}"].observer.onNext 
+								change:changed.value
 						if changed
 							listener.getMe().addData retriever, changed
 							listener.getMe().cycle()

@@ -95,7 +95,7 @@ define [
 												store = managers.getStore typeName
 												store.mergeData typeName,res
 											).ToArray()
-											metaData:
+											metadata:
 												count:x.inlineCount
 
 								parameterGroupDeferred.promise

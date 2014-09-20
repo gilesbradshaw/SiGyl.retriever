@@ -90,10 +90,10 @@ define [
 			retrieveRequestMerge @, retrieveRequests
 		collectionRetrieveRequestMerge:(collectionRetrieveRequests)=>
 			collectionRetrieveRequestMerge @, collectionRetrieveRequests
-		processMetaData:(metaData)=>
+		processMetaData:(metadata)=>
 			if @_getProcessMetaData
-				@_getProcessMetaData metaData
-			metaData
+				@_getProcessMetaData metadata
+			metadata
 		cancelIdUnlisten:(requests)=>
 			myRequests=[]
 			@retrieveRequestMerge myRequests

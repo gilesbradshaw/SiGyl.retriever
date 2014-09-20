@@ -23,9 +23,9 @@
       breezeEntityManagers: "App/BreezeEntityManagers",
       b64: "App/b64",
       observableExtensions: "app/observableExtensions",
-      configurationMetaData: "tests/metaData/configuration",
-      runtimeMetaData: "tests/metaData/runtime",
-      historyMetaData: "tests/metaData/history",
+      configurationMetaData: "tests/metadata/configuration",
+      runtimeMetaData: "tests/metadata/runtime",
+      historyMetaData: "tests/metadata/history",
       utils: "App/utils"
     }
   });

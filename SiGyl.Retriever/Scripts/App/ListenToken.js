@@ -178,11 +178,11 @@
         return collectionRetrieveRequestMerge(this, collectionRetrieveRequests);
       };
 
-      ListenToken.prototype.processMetaData = function(metaData) {
+      ListenToken.prototype.processMetaData = function(metadata) {
         if (this._getProcessMetaData) {
-          this._getProcessMetaData(metaData);
+          this._getProcessMetaData(metadata);
         }
-        return metaData;
+        return metadata;
       };
 
       ListenToken.prototype.cancelIdUnlisten = function(requests) {

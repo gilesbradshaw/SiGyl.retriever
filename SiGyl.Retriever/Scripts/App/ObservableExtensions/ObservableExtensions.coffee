@@ -113,8 +113,8 @@ define [
 								if deleteData.type is "#{type}.#{collection}"
 									if data.Id() is deleteData.value[utils.getMe().getDependent(entityType, collection).id()]() 
 										listenToken.data.remove deleteData.value
-						listenToken.getProcessMetaData (metaData)->
-							listenToken.metaData=metaData
+						listenToken.getProcessMetaData (metadata)->
+							listenToken.metadata=metadata
 						listenToken.getDataMerge (dataToMerge)->
 							if _type = linq.From(dataToMerge).SingleOrDefault(undefined, (x)->x.Type is type)
 								if _collection = linq.From(_type.Collections).SingleOrDefault(undefined, (x)->x.Collection is collection)
@@ -125,7 +125,7 @@ define [
 													listenToken.mixin data
 												else
 													data
-											listenToken.processMetaData parameterGroup.Collection.metaData
+											listenToken.processMetaData parameterGroup.Collection.metadata
 
 						listenToken.getCollectionRetrieveRequest (requests)->
 							typeRequest = linq.From(requests).SingleOrDefault undefined, (x)->x.type is type
@@ -175,8 +175,8 @@ define [
 						listenToken.type ="#{entityType.name}"
 						listenToken.key=myKey
 					
-						#listenToken.getProcessMetaData (metaData)->
-						#	listenToken.metaData=metaData
+						#listenToken.getProcessMetaData (metadata)->
+						#	listenToken.metadata=metadata
 						#this will change
 						listenToken.getDataMerge (dataToMerge)->
 							if _type = linq.From(dataToMerge).SingleOrDefault(undefined, (x)->x.Type is entityType.name)
@@ -188,7 +188,7 @@ define [
 												listenToken._mixinTo data
 											else
 												data
-										#listenToken.processMetaData parameterGroup.Collection.metaData
+										#listenToken.processMetaData parameterGroup.Collection.metadata
 						listenToken.getRetrieveRequest (requests)->
 							typeRequest = linq.From(requests).SingleOrDefault undefined, (x)->x.type is entityType.name
 							if !typeRequest

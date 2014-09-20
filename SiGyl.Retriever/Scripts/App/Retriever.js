@@ -115,7 +115,9 @@
             source.getMe().on("change", function(id, type, data) {
               return breezeRetriever.getMe().changeData(id, type, data).done(function(changed) {
                 if (retrieveSubjects["" + type + ":.:" + id]) {
-                  retrieveSubjects["" + type + ":.:" + id].observer.onNext(changed.value);
+                  retrieveSubjects["" + type + ":.:" + id].observer.onNext({
+                    change: changed.value
+                  });
                 }
                 if (changed) {
                   listener.getMe().addData(retriever, changed);

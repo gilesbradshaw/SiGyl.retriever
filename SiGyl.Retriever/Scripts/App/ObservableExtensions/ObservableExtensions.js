@@ -144,8 +144,8 @@
                   }
                 };
               })(this);
-              listenToken.getProcessMetaData(function(metaData) {
-                return listenToken.metaData = metaData;
+              listenToken.getProcessMetaData(function(metadata) {
+                return listenToken.metadata = metadata;
               });
               listenToken.getDataMerge(function(dataToMerge) {
                 var id, parameterGroup, _collection, _type;
@@ -169,7 +169,7 @@
                             return data;
                           }
                         }));
-                        return listenToken.processMetaData(parameterGroup.Collection.metaData);
+                        return listenToken.processMetaData(parameterGroup.Collection.metadata);
                       }
                     }
                   }

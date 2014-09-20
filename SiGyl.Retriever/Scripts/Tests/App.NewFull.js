@@ -35,9 +35,9 @@
       listenToken: "App/listenToken",
       source: "App/Source",
       observableExtensions: "app/NewobservableExtensions/observableExtensions",
-      configurationMetaData: "Tests/metaData/configuration",
-      runtimeMetaData: "Tests/metaData/runtime",
-      historyMetaData: "Tests/metaData/history",
+      configurationMetaData: "Tests/metadata/configuration",
+      runtimeMetaData: "Tests/metadata/runtime",
+      historyMetaData: "Tests/metadata/history",
       utils: "App/utils",
       "observableExtensions.listener": "App/ObservableExtensions/listener"
     }
@@ -87,7 +87,7 @@
       return Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).done(function() {
         return observableExtensions.initMe().then(function() {
           var ro, roo;
-          ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
+          ro = observableExtensions.getMe().rootObservable(384, "Folder");
           roo = ro();
           return ko.applyBindings({
             value: roo,

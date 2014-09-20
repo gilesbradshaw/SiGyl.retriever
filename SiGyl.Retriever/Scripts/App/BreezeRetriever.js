@@ -144,7 +144,7 @@
                           store = managers.getStore(typeName);
                           return store.mergeData(typeName, res);
                         }).ToArray(),
-                        metaData: {
+                        metadata: {
                           count: x.inlineCount
                         }
                       }

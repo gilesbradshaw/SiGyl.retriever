@@ -66,10 +66,10 @@ define [
 							else
 								if completeData.length>=10
 									lt.data.peek().splice 10, completeData.length-10
-							myPagerInfo.metaData or = 
+							myPagerInfo.metadata or = 
 								count:0
-							myPagerInfo.metaData.count+=1
-							lt._getProcessMetaData myPagerInfo.metaData
+							myPagerInfo.metadata.count+=1
+							lt._getProcessMetaData myPagerInfo.metadata
 
 							return ret
 							
@@ -87,9 +87,9 @@ define [
 								Value:myParameter() or (ext.getMyFilterValue myPagerInfo, "page", name, "page") or 1
 							]
 					oldmeta = lt._getProcessMetaData
-					lt._getProcessMetaData = (metaData)->
+					lt._getProcessMetaData = (metadata)->
 						if oldmeta
-							oldmeta metaData
+							oldmeta metadata
 						myPagerInfo = ext.getMyPagerInfo(target,"page",name)
 						currentPage =myParameter() or  Number((ext.getMyFilterValue myPagerInfo, "page", name, "page")) or 1
 
@@ -114,15 +114,15 @@ define [
 						myPagerInfo.pages.next.url ext.getMyFilterUrl(myPagerInfo.filter,'page',name,
 							page:currentPage+1
 						)
-						myPagerInfo.pages.next.isEnabled currentPage+1 < (Math.ceil metaData.count/10)
+						myPagerInfo.pages.next.isEnabled currentPage+1 < (Math.ceil metadata.count/10)
 						
 						myPagerInfo.pages.last.url ext.getMyFilterUrl(myPagerInfo.filter,'page',name,
-							page:(Math.ceil metaData.count/10)
+							page:(Math.ceil metadata.count/10)
 						)
-						myPagerInfo.pages.last.value (Math.ceil metaData.count/10)
-						myPagerInfo.pages.last.isEnabled currentPage < (Math.ceil metaData.count/10)
+						myPagerInfo.pages.last.value (Math.ceil metadata.count/10)
+						myPagerInfo.pages.last.isEnabled currentPage < (Math.ceil metadata.count/10)
 
-						myPagerInfo.metaData=metaData
+						myPagerInfo.metadata=metadata
 						
 					lt
 			(parameter)->

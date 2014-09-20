@@ -5,6 +5,8 @@ define [
 	"Q"
 	"linq"
 	"utils"
+	"rx"
+	"knockout.rx"
 	"observableExtensions.listener"
 ],(ko,Q,linq,utils) ->
 
@@ -33,27 +35,19 @@ define [
 
 
 
-	genericObservable=(observableType, subscriptionDefinition, dataProcessor, baseQuery,typeManager)->
-		subscribedDeferred= Q.defer()
-		subscribedPromise = subscribedDeferred.promise
+	genericObservable=(observableType, subscriptionDefinition, changeDataProcessor, baseQuery,typeManager)->
 		_queryFuncs=[]
 		_mergeFuncs=[]
-		preObtained= undefined
-		
+		preChanged= undefined
+		preDeleted= undefined
+		disposer = undefined
 		retrieverPromise = Q.defer()
 		data=observableType().extend
 				listener:
 					subscribeActions:->
-						disposer = undefined
+						
 						onSubscribe:->
-							myQuery = _queryFuncs.reduce ((q,fn)->fn q), "initialQuery"
-							retriever.subscriber(subscriptionDefinition()).then (sub)->
-								subscribedDeferred.resolve()
-								disposer = sub().subscribe (x)->
-									if preObtained
-										preObtained.push x
-									else
-										dataProcessor data,[x]
+							
 						onDispose:->
 							if disposer
 								disposer.dispose()
@@ -67,12 +61,30 @@ define [
 			_mergeFuncs.push mergeFunc
 		retrieve:()->
 			preObtained=[]
-			subscribedPromise.then ()->
-				myQuery = _queryFuncs.reduce ((q,fn)->fn q), baseQuery()
+			myQuery = _queryFuncs.reduce ((q,fn)->fn q), baseQuery()
+			if disposer
+				disposer.dispose()
+				disposer=undefined
+			retriever.subscriber(subscriptionDefinition()).then (sub)->
+				disposer = sub().subscribe (x)->
+					if x.changed
+						if preChanged
+							preChanged.push x.changed
+						else
+							changeDataProcessor data,undefined,[x.changed]
+					if x.deleted
+						if preDeleted
+							preDeleted.push x.deleted
+						else
+							changeDataProcessor data, undefined, undefined,[x.deleted]
+			
+				preChanged=[]
+				preDeleted=[]
 				qex= typeManager.executeQuery(myQuery)
 				qex.then (retrievedData)->
-					dataProcessor data, retrievedData.results, preObtained
-					preObtained = undefined
+					changeDataProcessor data, retrievedData.storedResults, preObtained, preDeleted
+					preChanged = undefined
+					preDeleted=undefined
 				qex.fail (err)->alert err
 
 
@@ -84,11 +96,11 @@ define [
 				observable= genericObservable(
 					ko.observableArray
 					()->subscriptionDefinition
-					(data,items,preItems)->
+					(data,items,changeItems,deleteItems)->
 						for item in items
 							data.push item
-						if preItems
-							for item in preItems
+						if changeItems
+							for item in changeItems
 								data.push item
 					()->"initialQuery"
 					entityManager.getType type
@@ -108,14 +120,16 @@ define [
 				observable= genericObservable(
 					ko.observable
 					()->"#{type}:.:#{id}"
-					(data,items, preItems)->
+					(data,items,changeItems,deleteItems)->
+						oldItem= data()
 						if items && items.length
-							item= typeManager.store.mergeData type, items[items.length-1]
-						if preItems && preItems.length
-							item= typeManager.store.mergeData type, preItems[items.length-1]
-						data item
+							item= items[items.length-1]
+						if changeItems && changeItems.length
+							item= changeItems[changeItems.length-1]
+						if item isnt oldItem
+							data item
 					()->
-						query = typeManager.query
+						query = typeManager.query()
 						query=query.where "Id", "==", id
 						query
 					typeManager
@@ -125,16 +139,20 @@ define [
 						retrieve:observable.retrieve
 		manyObservable:(item,type,collection)->
 			()->
-				typeManager = entityManager.getType type
-				collectionManager= typeManager.collectionManager collection
+				typeManager = (entityManager.getType type).collectionManager collection
 				observable= genericObservable(
-					ko.observable
-					()->"#{type}:.#{collection}:#{item.Id()}"
-					(data,items, preItems)->
-						data items.map (i)-> typeManager.store.mergeData collectionManager.entityType.name, i
-						
-					()->
-						query = collectionManager.query item.Id()
+					ko.observableArray
+					()->typeManager.subscriptionDefinition item
+					(data,items, changeItems, deleteItems)->
+						if items
+							data items
+						if changeItems
+							for i in linq.From(changeItems).Where((ci)->data().indexOf(ci) <0).ToArray()
+								data.push i
+						if deleteItems
+							for i in linq.From(deleteItems).Where((ci)->data().indexOf(ci) >=0).ToArray()
+								data.remove i
+					()->query = typeManager.query item.Id()
 					typeManager
 				)
 				root:observable.data.extend
@@ -142,31 +160,26 @@ define [
 						retrieve:observable.retrieve
 		singleObservable:(item,property,entityType)->
 			()->
-				typeManager = entityManager.getType entityType.name
-				singleManager= typeManager.singleManager property
+				typeManager = (entityManager.getType entityType.name).singleManager property
 				observable= genericObservable(
 					ko.observable
-					()->"#{singleManager.entityType.name}:.:#{item.Id()}"
-					(data,items, preItems)->
+					()->typeManager.subscriptionDefinition item
+					(data,items, changeItems, deleteItems)->
+						oldItem= data()
 						if items && items.length
-							item= typeManager.store.mergeData singleManager.entityType.name, items[items.length-1]
-						if preItems && preItems.length
-							item= typeManager.store.mergeData singleManager.entityType.name, preItems[items.length-1]
-						data item
+							i= items[items.length-1]
+						if changeItems && changeItems.length
+							i = changeItems[changeItems.length-1]
+						if oldItem isnt i
+							data i
 					()->
-						query = singleManager.query item
+						query = typeManager.query item
 					typeManager
 				)
 				root:observable.data.extend
 					retrieve:
 						retrieve:observable.retrieve
-		manyObservable1:(id,type,collection)->
-			()->
-				root:ko.observableArray [
-					Name:'ok'
-				,
-					Name:'ahhh'
-				]
+
 	retriever=undefined
 	entityManager=undefined
 	getMe:->observableExtensions

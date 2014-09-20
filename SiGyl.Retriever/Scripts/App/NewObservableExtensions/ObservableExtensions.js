@@ -1,5 +1,5 @@
 (function() {
-  define(["knockout", "Q", "linq", "utils", "observableExtensions.listener"], function(ko, Q, linq, utils) {
+  define(["knockout", "Q", "linq", "utils", "rx", "knockout.rx", "observableExtensions.listener"], function(ko, Q, linq, utils) {
     var entityManager, genericObservable, observableExtensions, retriever;
     ko.extenders.retrieve = function(target, options) {
       target.retrieve = function(name) {
@@ -33,36 +33,19 @@
       };
       return target;
     };
-    genericObservable = function(observableType, subscriptionDefinition, dataProcessor, baseQuery, typeManager) {
-      var data, preObtained, retrieverPromise, subscribedDeferred, subscribedPromise, _mergeFuncs, _queryFuncs;
-      subscribedDeferred = Q.defer();
-      subscribedPromise = subscribedDeferred.promise;
+    genericObservable = function(observableType, subscriptionDefinition, changeDataProcessor, baseQuery, typeManager) {
+      var data, disposer, preChanged, preDeleted, retrieverPromise, _mergeFuncs, _queryFuncs;
       _queryFuncs = [];
       _mergeFuncs = [];
-      preObtained = void 0;
+      preChanged = void 0;
+      preDeleted = void 0;
+      disposer = void 0;
       retrieverPromise = Q.defer();
       data = observableType().extend({
         listener: {
           subscribeActions: function() {
-            var disposer;
-            disposer = void 0;
             return {
-              onSubscribe: function() {
-                var myQuery;
-                myQuery = _queryFuncs.reduce((function(q, fn) {
-                  return fn(q);
-                }), "initialQuery");
-                return retriever.subscriber(subscriptionDefinition()).then(function(sub) {
-                  subscribedDeferred.resolve();
-                  return disposer = sub().subscribe(function(x) {
-                    if (preObtained) {
-                      return preObtained.push(x);
-                    } else {
-                      return dataProcessor(data, [x]);
-                    }
-                  });
-                });
-              },
+              onSubscribe: function() {},
               onDispose: function() {
                 if (disposer) {
                   return disposer.dispose();
@@ -84,16 +67,40 @@
           return _mergeFuncs.push(mergeFunc);
         },
         retrieve: function() {
+          var myQuery, preObtained;
           preObtained = [];
-          return subscribedPromise.then(function() {
-            var myQuery, qex;
-            myQuery = _queryFuncs.reduce((function(q, fn) {
-              return fn(q);
-            }), baseQuery());
+          myQuery = _queryFuncs.reduce((function(q, fn) {
+            return fn(q);
+          }), baseQuery());
+          if (disposer) {
+            disposer.dispose();
+            disposer = void 0;
+          }
+          return retriever.subscriber(subscriptionDefinition()).then(function(sub) {
+            var qex;
+            disposer = sub().subscribe(function(x) {
+              if (x.changed) {
+                if (preChanged) {
+                  preChanged.push(x.changed);
+                } else {
+                  changeDataProcessor(data, void 0, [x.changed]);
+                }
+              }
+              if (x.deleted) {
+                if (preDeleted) {
+                  return preDeleted.push(x.deleted);
+                } else {
+                  return changeDataProcessor(data, void 0, void 0, [x.deleted]);
+                }
+              }
+            });
+            preChanged = [];
+            preDeleted = [];
             qex = typeManager.executeQuery(myQuery);
             qex.then(function(retrievedData) {
-              dataProcessor(data, retrievedData.results, preObtained);
-              return preObtained = void 0;
+              changeDataProcessor(data, retrievedData.storedResults, preObtained, preDeleted);
+              preChanged = void 0;
+              return preDeleted = void 0;
             });
             return qex.fail(function(err) {
               return alert(err);
@@ -108,16 +115,16 @@
           var observable;
           observable = genericObservable(ko.observableArray, function() {
             return subscriptionDefinition;
-          }, function(data, items, preItems) {
+          }, function(data, items, changeItems, deleteItems) {
             var item, _i, _j, _len, _len1, _results;
             for (_i = 0, _len = items.length; _i < _len; _i++) {
               item = items[_i];
               data.push(item);
             }
-            if (preItems) {
+            if (changeItems) {
               _results = [];
-              for (_j = 0, _len1 = preItems.length; _j < _len1; _j++) {
-                item = preItems[_j];
+              for (_j = 0, _len1 = changeItems.length; _j < _len1; _j++) {
+                item = changeItems[_j];
                 _results.push(data.push(item));
               }
               return _results;
@@ -147,18 +154,21 @@
           typeManager = entityManager.getType(type);
           observable = genericObservable(ko.observable, function() {
             return "" + type + ":.:" + id;
-          }, function(data, items, preItems) {
-            var item;
+          }, function(data, items, changeItems, deleteItems) {
+            var item, oldItem;
+            oldItem = data();
             if (items && items.length) {
-              item = typeManager.store.mergeData(type, items[items.length - 1]);
+              item = items[items.length - 1];
             }
-            if (preItems && preItems.length) {
-              item = typeManager.store.mergeData(type, preItems[items.length - 1]);
+            if (changeItems && changeItems.length) {
+              item = changeItems[changeItems.length - 1];
             }
-            return data(item);
+            if (item !== oldItem) {
+              return data(item);
+            }
           }, function() {
             var query;
-            query = typeManager.query;
+            query = typeManager.query();
             query = query.where("Id", "==", id);
             return query;
           }, typeManager);
@@ -173,18 +183,38 @@
       },
       manyObservable: function(item, type, collection) {
         return function() {
-          var collectionManager, observable, typeManager;
-          typeManager = entityManager.getType(type);
-          collectionManager = typeManager.collectionManager(collection);
-          observable = genericObservable(ko.observable, function() {
-            return "" + type + ":." + collection + ":" + (item.Id());
-          }, function(data, items, preItems) {
-            return data(items.map(function(i) {
-              return typeManager.store.mergeData(collectionManager.entityType.name, i);
-            }));
+          var observable, typeManager;
+          typeManager = (entityManager.getType(type)).collectionManager(collection);
+          observable = genericObservable(ko.observableArray, function() {
+            return typeManager.subscriptionDefinition(item);
+          }, function(data, items, changeItems, deleteItems) {
+            var i, _i, _j, _len, _len1, _ref, _ref1, _results;
+            if (items) {
+              data(items);
+            }
+            if (changeItems) {
+              _ref = linq.From(changeItems).Where(function(ci) {
+                return data().indexOf(ci) < 0;
+              }).ToArray();
+              for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                i = _ref[_i];
+                data.push(i);
+              }
+            }
+            if (deleteItems) {
+              _ref1 = linq.From(deleteItems).Where(function(ci) {
+                return data().indexOf(ci) >= 0;
+              }).ToArray();
+              _results = [];
+              for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+                i = _ref1[_j];
+                _results.push(data.remove(i));
+              }
+              return _results;
+            }
           }, function() {
             var query;
-            return query = collectionManager.query(item.Id());
+            return query = typeManager.query(item.Id());
           }, typeManager);
           return {
             root: observable.data.extend({
@@ -197,22 +227,25 @@
       },
       singleObservable: function(item, property, entityType) {
         return function() {
-          var observable, singleManager, typeManager;
-          typeManager = entityManager.getType(entityType.name);
-          singleManager = typeManager.singleManager(property);
+          var observable, typeManager;
+          typeManager = (entityManager.getType(entityType.name)).singleManager(property);
           observable = genericObservable(ko.observable, function() {
-            return "" + singleManager.entityType.name + ":.:" + (item.Id());
-          }, function(data, items, preItems) {
+            return typeManager.subscriptionDefinition(item);
+          }, function(data, items, changeItems, deleteItems) {
+            var i, oldItem;
+            oldItem = data();
             if (items && items.length) {
-              item = typeManager.store.mergeData(singleManager.entityType.name, items[items.length - 1]);
+              i = items[items.length - 1];
             }
-            if (preItems && preItems.length) {
-              item = typeManager.store.mergeData(singleManager.entityType.name, preItems[items.length - 1]);
+            if (changeItems && changeItems.length) {
+              i = changeItems[changeItems.length - 1];
             }
-            return data(item);
+            if (oldItem !== i) {
+              return data(i);
+            }
           }, function() {
             var query;
-            return query = singleManager.query(item);
+            return query = typeManager.query(item);
           }, typeManager);
           return {
             root: observable.data.extend({
@@ -220,19 +253,6 @@
                 retrieve: observable.retrieve
               }
             })
-          };
-        };
-      },
-      manyObservable1: function(id, type, collection) {
-        return function() {
-          return {
-            root: ko.observableArray([
-              {
-                Name: 'ok'
-              }, {
-                Name: 'ahhh'
-              }
-            ])
           };
         };
       }

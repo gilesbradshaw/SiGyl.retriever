@@ -28,9 +28,9 @@
       source: "App/Source",
       storeTemp: "App/storeTemp",
       observableExtensions: "app/observableExtensions",
-      configurationMetaData: "App/metaData/configuration",
-      runtimeMetaData: "App/metaData/runtime",
-      historyMetaData: "App/metaData/history",
+      configurationMetaData: "App/metadata/configuration",
+      runtimeMetaData: "App/metadata/runtime",
+      historyMetaData: "App/metadata/history",
       utils: "App/utils"
     }
   });
@@ -530,7 +530,7 @@
                             "Id": 1
                           }
                         ],
-                        "metaData": {
+                        "metadata": {
                           "count": 21
                         }
                       }

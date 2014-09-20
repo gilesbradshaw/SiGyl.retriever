@@ -20,20 +20,27 @@
 	{{#ifnot:hide}}
 		{{#with:value.root.retrieve()}}
 			{{#with:retrieved()}}
-				{{#with:Application()}}
+				{{#with:Parent()}}
 					{{#with:root.retrieve()}}
 						{{#with:retrieved()}}
-							<h1>{{Name}}</h1>
+							<h1>{{Name}}</h1>  < the app??? eh?????????
 						{{/with}}
 					{{/with}}
 				{{/with}}
 			
 				<h1>{{Name}}</h1>
-				{{#with:Sites()}}
+				{{#with:Nodes()}}
 					<ul>
 						{{#with:root.retrieve()}}
 							{{#foreach:retrieved()}}
-							<li>{{Name}}</li>
+						<li>
+							{{Name}}
+							{{#with:ScanClass().root.retrieve()}}
+							{{#with:retrieved()}}
+							-{{Name}}
+							{{/with}}
+							{{/with}}
+						</li>
 							{{/foreach}}
 						{{/with}}
 					</ul>

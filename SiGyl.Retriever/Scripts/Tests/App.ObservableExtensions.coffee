@@ -19,9 +19,9 @@
 		"knockout.mapping":"knockout.mapping-latest"
 		"knockout.punches":"knockout.punches"
 		observableExtensions:"app/observableExtensions/observableExtensions"
-		configurationMetaData:"Tests/metaData/configuration"
-		runtimeMetaData:"Tests/metaData/runtime"
-		historyMetaData:"Tests/metaData/history"
+		configurationMetaData:"Tests/metadata/configuration"
+		runtimeMetaData:"Tests/metadata/runtime"
+		historyMetaData:"Tests/metadata/history"
 		utils:"App/utils"
 
 		"observableExtensions.listener": "App/ObservableExtensions/listener"

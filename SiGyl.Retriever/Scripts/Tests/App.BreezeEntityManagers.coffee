@@ -17,9 +17,9 @@
 		"knockout.mapping":"knockout.mapping-latest"
 		breezeEntityManagers:"App/BreezeEntityManagers"
 		observableExtensions:"app/observableExtensions"
-		configurationMetaData:"tests/metaData/configuration"
-		runtimeMetaData:"tests/metaData/runtime"
-		historyMetaData:"tests/metaData/history"
+		configurationMetaData:"tests/metadata/configuration"
+		runtimeMetaData:"tests/metadata/runtime"
+		historyMetaData:"tests/metadata/history"
 		utils:"App/utils"
 
 
