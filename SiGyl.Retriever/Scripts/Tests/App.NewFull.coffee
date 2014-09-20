@@ -11,7 +11,7 @@
 		rx:"rx/rx"
 		"rx.joinpatterns":"rx/rx.joinpatterns"
 		"rx.binding":"rx/rx.binding"
-		"knockout.rx":"knockout.rx"
+		"knockout.rx":"sigyl.knockout.rx"
 		linq:"linqjs-amd"
 		sinon:"sinon-1.10.3"
 		sinonie:"sinon-ie-1.10.3"

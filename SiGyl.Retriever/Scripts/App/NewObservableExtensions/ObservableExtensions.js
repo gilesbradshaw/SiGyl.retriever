@@ -1,5 +1,5 @@
 (function() {
-  define(["knockout", "Q", "linq", "utils", "rx", "knockout.rx", "observableExtensions.listener"], function(ko, Q, linq, utils) {
+  define(["knockout", "Q", "linq", "utils", "rx", "knockout.rx", "observableExtensions.listener"], function(ko, Q, linq, utils, rx) {
     var entityManager, genericObservable, observableExtensions, retriever;
     ko.extenders.retrieve = function(target, options) {
       target.retrieve = function(name) {
@@ -33,30 +33,54 @@
       };
       return target;
     };
-    genericObservable = function(observableType, subscriptionDefinition, changeDataProcessor, baseQuery, typeManager) {
-      var data, disposer, preChanged, preDeleted, retrieverPromise, _mergeFuncs, _queryFuncs;
+    genericObservable = function(data, subscriptionDefinition, changeDataProcessor, baseQuery, typeManager) {
+      var observable, _mergeFuncs, _queryFuncs;
       _queryFuncs = [];
       _mergeFuncs = [];
-      preChanged = void 0;
-      preDeleted = void 0;
-      disposer = void 0;
-      retrieverPromise = Q.defer();
-      data = observableType().extend({
-        listener: {
-          subscribeActions: function() {
-            return {
-              onSubscribe: function() {},
-              onDispose: function() {
-                if (disposer) {
-                  return disposer.dispose();
-                }
+      observable = rx.Observable.create(function(observer) {
+        var disposer, myQuery;
+        disposer = void 0;
+        myQuery = _queryFuncs.reduce((function(q, fn) {
+          return fn(q);
+        }), baseQuery());
+        retriever.subscriber(subscriptionDefinition()).then(function(sub) {
+          var preChanged, preDeleted, qex;
+          preChanged = [];
+          preDeleted = [];
+          qex = typeManager.executeQuery(myQuery);
+          qex.then(function(retrievedData) {
+            data = changeDataProcessor(observer, data, retrievedData.storedResults, preChanged, preDeleted);
+            preChanged = void 0;
+            return preDeleted = void 0;
+          });
+          qex.fail(function(err) {
+            return alert(err);
+          });
+          return disposer = sub().subscribe(function(x) {
+            if (x.changed) {
+              if (preChanged) {
+                preChanged.push(x.changed);
+              } else {
+                data = changeDataProcessor(observer, data, void 0, [x.changed]);
               }
-            };
+            }
+            if (x.deleted) {
+              if (preDeleted) {
+                return preDeleted.push(x.deleted);
+              } else {
+                return data = changeDataProcessor(observer, data, void 0, void 0, [x.deleted]);
+              }
+            }
+          });
+        });
+        return function() {
+          if (disposer) {
+            return disposer.dispose();
           }
-        }
+        };
       });
       return {
-        data: data,
+        data: observable.toKoObservable(data),
         clearQuery: function() {
           return _queryFuncs = [];
         },
@@ -66,47 +90,7 @@
         makeMergeFunc: function(mergeFunc) {
           return _mergeFuncs.push(mergeFunc);
         },
-        retrieve: function() {
-          var myQuery, preObtained;
-          preObtained = [];
-          myQuery = _queryFuncs.reduce((function(q, fn) {
-            return fn(q);
-          }), baseQuery());
-          if (disposer) {
-            disposer.dispose();
-            disposer = void 0;
-          }
-          return retriever.subscriber(subscriptionDefinition()).then(function(sub) {
-            var qex;
-            disposer = sub().subscribe(function(x) {
-              if (x.changed) {
-                if (preChanged) {
-                  preChanged.push(x.changed);
-                } else {
-                  changeDataProcessor(data, void 0, [x.changed]);
-                }
-              }
-              if (x.deleted) {
-                if (preDeleted) {
-                  return preDeleted.push(x.deleted);
-                } else {
-                  return changeDataProcessor(data, void 0, void 0, [x.deleted]);
-                }
-              }
-            });
-            preChanged = [];
-            preDeleted = [];
-            qex = typeManager.executeQuery(myQuery);
-            qex.then(function(retrievedData) {
-              changeDataProcessor(data, retrievedData.storedResults, preObtained, preDeleted);
-              preChanged = void 0;
-              return preDeleted = void 0;
-            });
-            return qex.fail(function(err) {
-              return alert(err);
-            });
-          });
-        }
+        retrieve: function() {}
       };
     };
     observableExtensions = {
@@ -152,11 +136,11 @@
         return function() {
           var observable, typeManager;
           typeManager = entityManager.getType(type);
-          observable = genericObservable(ko.observable, function() {
+          observable = genericObservable(void 0, function() {
             return "" + type + ":.:" + id;
-          }, function(data, items, changeItems, deleteItems) {
+          }, function(observer, data, items, changeItems, deleteItems) {
             var item, oldItem;
-            oldItem = data();
+            oldItem = data;
             if (items && items.length) {
               item = items[items.length - 1];
             }
@@ -164,8 +148,9 @@
               item = changeItems[changeItems.length - 1];
             }
             if (item !== oldItem) {
-              return data(item);
+              observer.onNext(item);
             }
+            return item;
           }, function() {
             var query;
             query = typeManager.query();
@@ -185,12 +170,14 @@
         return function() {
           var observable, typeManager;
           typeManager = (entityManager.getType(type)).collectionManager(collection);
-          observable = genericObservable(ko.observableArray, function() {
+          observable = genericObservable([], function() {
             return typeManager.subscriptionDefinition(item);
-          }, function(data, items, changeItems, deleteItems) {
-            var i, _i, _j, _len, _len1, _ref, _ref1, _results;
+          }, function(observer, data, items, changeItems, deleteItems) {
+            var changed, i, _i, _j, _len, _len1, _ref, _ref1;
+            changed = false;
             if (items) {
-              data(items);
+              data = items;
+              changed = true;
             }
             if (changeItems) {
               _ref = linq.From(changeItems).Where(function(ci) {
@@ -199,19 +186,23 @@
               for (_i = 0, _len = _ref.length; _i < _len; _i++) {
                 i = _ref[_i];
                 data.push(i);
+                changed = true;
               }
             }
             if (deleteItems) {
               _ref1 = linq.From(deleteItems).Where(function(ci) {
                 return data().indexOf(ci) >= 0;
               }).ToArray();
-              _results = [];
               for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
                 i = _ref1[_j];
-                _results.push(data.remove(i));
+                data.remove(i);
+                changed = true;
               }
-              return _results;
             }
+            if (changed) {
+              observer.onNext(data);
+            }
+            return data;
           }, function() {
             var query;
             return query = typeManager.query(item.Id());
@@ -229,11 +220,11 @@
         return function() {
           var observable, typeManager;
           typeManager = (entityManager.getType(entityType.name)).singleManager(property);
-          observable = genericObservable(ko.observable, function() {
+          observable = genericObservable(void 0, function() {
             return typeManager.subscriptionDefinition(item);
-          }, function(data, items, changeItems, deleteItems) {
+          }, function(observer, data, items, changeItems, deleteItems) {
             var i, oldItem;
-            oldItem = data();
+            oldItem = data;
             if (items && items.length) {
               i = items[items.length - 1];
             }
@@ -241,8 +232,9 @@
               i = changeItems[changeItems.length - 1];
             }
             if (oldItem !== i) {
-              return data(i);
+              observer.onNext(i);
             }
+            return i;
           }, function() {
             var query;
             return query = typeManager.query(item);

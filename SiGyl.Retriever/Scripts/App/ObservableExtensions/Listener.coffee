@@ -11,7 +11,7 @@ define [
 		oldSubscribe = target.subscribe.bind target
 		subscriptions=[]
 		
-		target.subscribe = (callback, callbackTarget,event) =>
+		target.subscribe = (callback, callbackTarget,event) ->
 			ret= oldSubscribe callback, callbackTarget,event
 			if subscribeActions and subscribeActions.subscribePing
 				subscribeActions.subscribePing ret

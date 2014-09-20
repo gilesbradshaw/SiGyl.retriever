@@ -167,7 +167,6 @@
     <Content Include="Scripts\knockout.mapping-latest.js" />
     <Content Include="Scripts\knockout.punches.js" />
     <Content Include="Scripts\knockout.punches.min.js" />
-    <Content Include="Scripts\knockout.rx.js" />
     <Content Include="Scripts\rx\rx.aggregates.js" />
     <Content Include="Scripts\rx\rx.aggregates.min.js" />
     <Content Include="Scripts\rx\rx.all.compat.js" />
@@ -208,6 +207,7 @@
     <Content Include="Scripts\rx\rx.time.min.js" />
     <Content Include="Scripts\rx\rx.virtualtime.js" />
     <Content Include="Scripts\rx\rx.virtualtime.min.js" />
+    <Content Include="Scripts\sigyl.knockout.rx.js" />
     <Content Include="Scripts\Tests\App.BreezeEntityManagers.js">
       <DependentUpon>App.BreezeEntityManagers.coffee</DependentUpon>
     </Content>
