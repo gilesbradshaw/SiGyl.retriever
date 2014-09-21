@@ -11,24 +11,31 @@ define [
 ],(ko,Q,linq,utils,rx) ->
 
 
-	addRetrieve=(baseObservable, initialData)->
-		retrieve:()->
-			retrieved:baseObservable.observable.toKoObservable initialData
-	addBase=(baseObservable)=>
+	get=(baseObservable, initialData)->
+		get:()->
+			baseObservable.buildQuery()
+			got:baseObservable.observable.toKoObservable initialData
+	base=(baseObservable)=>
 		base:(name)->
 			ko.utils.unwrapObservable name
-			baseObservable.clearQuery()
 			baseObservable.makeQuery (query)-> query.where "Name", "startsWith", "N"
 			@
-	addOrderBy=(baseObservable)=>
+	orderBy=(baseObservable)=>
 		orderBy:(field)->
-			baseObservable.makeQuery (query)-> query.orderBy "#{ko.utils.unwrapObservable field}"
+			baseObservable.makeQuery (query)-> query.orderBy "#{ko.utils.unwrapObservable field} desc"
 			@
-
-	ko.extenders.retrieve=(target, options)->
-		target.retrieve= (name)->
-			options.retrieve()
-			retrieved:()->target
+	skip=(baseObservable)=>
+		skip:(count)->
+			baseObservable.makeQuery (query)-> query.skip ko.utils.unwrapObservable count
+			@
+	take=(baseObservable)=>
+		take:(count)->
+			baseObservable.makeQuery (query)-> query.take ko.utils.unwrapObservable count
+			@
+	ko.extenders.get=(target, options)->
+		target.get= (name)->
+			options.get()
+			got:()->target
 		target
 
 	ko.extenders.order=(target, options)->
@@ -49,23 +56,28 @@ define [
 
 
 
-	genericObservable=(data, subscriptionDefinition, changeDataProcessor, baseQuery,typeManager)->
+	createBaseObservable=(data, subscriptionDefinition, changeDataProcessor, baseQuery,typeManager)->
 		_queryFuncs=[]
 		_mergeFuncs=[]
-		
+		myQuery=undefined
 		observable= rx.Observable.create (observer)->
 			disposer=undefined
-			myQuery = _queryFuncs.reduce ((q,fn)->fn q), baseQuery()
-			retriever.subscriber(subscriptionDefinition()).then (sub)->
+			
+			filterFunction = myQuery._toFilterFunction typeManager.breezeEntityType
+			toOrderByComparer=myQuery._toOrderByComparer typeManager.breezeEntityType
+			entityManager.subscriber(subscriptionDefinition()).then (sub)->
 				preChanged=[]
 				preDeleted=[]
-				filterFunction = myQuery._toFilterFunction typeManager.breezeEntityType
-				qex= typeManager.executeQuery(myQuery)
-				qex.then (retrievedData)->
-					data = changeDataProcessor observer, data, retrievedData.storedResults, preChanged, preDeleted
-					preChanged = undefined
-					preDeleted=undefined
-				qex.fail (err)->alert err
+				execute= ()->
+					qex= typeManager.executeQuery(myQuery)
+					qex.then (gotData)->
+						changeResult = changeDataProcessor data, gotData.storedResults, preChanged, preDeleted
+						data=changeResult.data
+						observer.onNext data
+						preChanged = undefined
+						preDeleted=undefined
+					qex.fail (err)->alert err
+				execute()
 				disposer = sub().subscribe (x)->
 					deleted = x.deleted
 					if x.changed
@@ -75,19 +87,39 @@ define [
 							if preChanged
 								preChanged.push x.changed
 							else
-								data = changeDataProcessor observer, data,undefined,[x.changed]
+								changeResult = changeDataProcessor data,undefined,[x.changed]
+								data = changeResult.data
 					if deleted
 						if preDeleted
 							preDeleted.push deleted
 						else
-							data = changeDataProcessor observer, data, undefined, undefined,[deleted]
+							changeResult = changeDataProcessor  data, undefined, undefined,[deleted]
+							data = changeResult.data
+					if changeResult
+						if data instanceof Array
+							for index in [0..data.length-2]
+								if toOrderByComparer(data[index], data[index+1])>0
+									needsSorting=true
+									data.sort toOrderByComparer
+									index=data.length-2
+							if myQuery.skipCount and data.indexOf(x.changed) ==0 
+								execute()
+								return
+							else
+								if myQuery.takeCount
+									if data.length>  myQuery.takeCount
+										data.splice data.length-1,1
+
+					if changeResult.changed or needsSorting
+						observer.onNext data
 			
 			()->
 				if disposer
 					disposer.dispose()
 
 		observable:observable
-		clearQuery:()->
+		buildQuery:()->
+			myQuery = _queryFuncs.reduce ((q,fn)->fn q), baseQuery()
 			_queryFuncs=[]
 		makeQuery:(queryFunc)->
 			_queryFuncs.push queryFunc
@@ -99,7 +131,7 @@ define [
 	observableExtensions= 
 		testManyObservable:(subscriptionDefinition, type)->
 			()->
-				observable= genericObservable(
+				observable= createBaseObservable(
 					ko.observableArray
 					()->subscriptionDefinition
 					(data,items,changeItems,deleteItems)->
@@ -108,6 +140,7 @@ define [
 						if changeItems
 							for item in changeItems
 								data.push item
+
 					()->"initialQuery"
 					entityManager.getType type
 				)
@@ -118,37 +151,40 @@ define [
 						
 					order:
 						makeQuery:observable.makeQuery
-					retrieve:
-						retrieve:observable.retrieve
+					get:
+						get:observable.get
 		rootObservable:(id,type)->
 			()->
 				typeManager = entityManager.getType type
-				baseObservable= genericObservable(
+				baseObservable= createBaseObservable(
 					undefined
 					()->"#{type}:.:#{id}"
-					(observer, data,items,changeItems,deleteItems)->
+					(data,items,changeItems,deleteItems)->
 						oldItem= data
 						if items && items.length
 							item= items[items.length-1]
 						if changeItems && changeItems.length
 							item= changeItems[changeItems.length-1]
 						if item isnt oldItem
-							observer.onNext item
-						item
+							changed:true
+							data:item
+						else
+							changed:false
+							data:item
 					()->
 						query = typeManager.query()
 						query=query.where "Id", "==", id
 						query
 					typeManager
 				)
-				$.extend {}, addRetrieve baseObservable
+				$.extend {}, get baseObservable
 		manyObservable:(item,type,collection)->
 			()->
 				typeManager = (entityManager.getType type).collectionManager collection
-				baseObservable= genericObservable(
+				baseObservable= createBaseObservable(
 					[]
 					()->typeManager.subscriptionDefinition item
-					(observer, data,items, changeItems, deleteItems)->
+					(data,items, changeItems, deleteItems)->
 						changed=false
 						if items
 							data = items
@@ -162,40 +198,44 @@ define [
 								if (di = data.indexOf(d))>=0
 									data.splice data.indexOf(i), 1
 									changed=true
-						if changed
-							observer.onNext data
-						data
+						
+						changed:changed
+						data:data
 					()->query = typeManager.query item.Id()
 					typeManager
 				)
 				$.extend(
 					{}
-					addRetrieve baseObservable,[]
-					addBase baseObservable
-					addOrderBy baseObservable
+					get baseObservable,[]
+					base baseObservable
+					orderBy baseObservable
+					skip baseObservable
+					take baseObservable
 				)
 		singleObservable:(item,property,entityType)->
 			()->
 				typeManager = (entityManager.getType entityType.name).singleManager property
-				baseObservable= genericObservable(
+				baseObservable= createBaseObservable(
 					undefined
 					()->typeManager.subscriptionDefinition item
-					(observer, data,items, changeItems, deleteItems)->
+					(data,items, changeItems, deleteItems)->
 						oldItem= data
 						if items && items.length
 							i= items[items.length-1]
 						if changeItems && changeItems.length
 							i = changeItems[changeItems.length-1]
 						if oldItem isnt i
-							observer.onNext i
-						i
+							changed:true
+							data:i
+						else
+							changed:false
+							data:i
 					()->
 						query = typeManager.query item
 					typeManager
 				)
-				$.extend {}, addRetrieve baseObservable
+				$.extend {}, get baseObservable
 
-	retriever=undefined
 	entityManager=undefined
 	getMe:->observableExtensions
 	initMe:->
@@ -203,7 +243,6 @@ define [
 		require ["breezeEntityManagers"], (br)->
 			br.getMe().then (em)->
 				entityManager=em
-				retriever=em
 				deferred.resolve()
 		#ObservableExtensions.modelExtensions={}
 		deferred.promise

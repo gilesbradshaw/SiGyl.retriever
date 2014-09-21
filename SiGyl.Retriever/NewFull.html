@@ -18,29 +18,27 @@
 	<h1>{{hide}}</h1>
 	<input type="checkbox" checked="{{hide}}"/>
 	{{#ifnot:hide}}
-		{{#with:value.retrieve()}}
-			{{#with:retrieved()}}
-				{{#with:Parent()}}
-					{{#with:retrieve()}}
-						{{#with:retrieved()}}
-							<h1>{{Name}}</h1>  < the app??? eh?????????
-						{{/with}}
+		{{#with:value.get()}}
+			{{#with:got()}}
+				{{#with:Parent().get()}}
+					{{#with:got()}}
+						<h1>{{Name}}</h1>  < the app??? eh?????????
 					{{/with}}
 				{{/with}}
 			
 				<h1>{{Name}}</h1>
 				{{#with:Nodes()}}
 					<ul>
-						{{#with:base().orderBy("Name").retrieve()}}
-							{{#foreach:retrieved()}}
-						<li>
-							{{Name}}
-							{{#with:ScanClass().retrieve()}}
-							{{#with:retrieved()}}
-							-{{Name}}
-							{{/with}}
-							{{/with}}
-						</li>
+						{{#with:base().orderBy("Name").skip(2).take(3).get()}}
+							{{#foreach:got()}}
+								<li>
+									{{Name}}
+									{{#with:ScanClass().get()}}
+									{{#with:got()}}
+									-{{Name}}
+									{{/with}}
+									{{/with}}
+								</li>
 							{{/foreach}}
 						{{/with}}
 					</ul>
