@@ -11,6 +11,20 @@ define [
 ],(ko,Q,linq,utils,rx) ->
 
 
+	addRetrieve=(baseObservable, initialData)->
+		retrieve:()->
+			retrieved:baseObservable.observable.toKoObservable initialData
+	addBase=(baseObservable)=>
+		base:(name)->
+			ko.utils.unwrapObservable name
+			baseObservable.clearQuery()
+			baseObservable.makeQuery (query)-> query.where "Name", "startsWith", "N"
+			@
+	addOrderBy=(baseObservable)=>
+		orderBy:(field)->
+			baseObservable.makeQuery (query)-> query.orderBy "#{ko.utils.unwrapObservable field}"
+			@
+
 	ko.extenders.retrieve=(target, options)->
 		target.retrieve= (name)->
 			options.retrieve()
@@ -72,18 +86,13 @@ define [
 				if disposer
 					disposer.dispose()
 
-		
-		data:observable.toKoObservable data
+		observable:observable
 		clearQuery:()->
 			_queryFuncs=[]
-			
 		makeQuery:(queryFunc)->
 			_queryFuncs.push queryFunc
 		makeMergeFunc:(mergeFunc)->
 			_mergeFuncs.push mergeFunc
-		retrieve:()->
-			
-
 
 		
 
@@ -114,7 +123,7 @@ define [
 		rootObservable:(id,type)->
 			()->
 				typeManager = entityManager.getType type
-				observable= genericObservable(
+				baseObservable= genericObservable(
 					undefined
 					()->"#{type}:.:#{id}"
 					(observer, data,items,changeItems,deleteItems)->
@@ -132,13 +141,11 @@ define [
 						query
 					typeManager
 				)
-				root:observable.data.extend
-					retrieve:
-						retrieve:observable.retrieve
+				$.extend {}, addRetrieve baseObservable
 		manyObservable:(item,type,collection)->
 			()->
 				typeManager = (entityManager.getType type).collectionManager collection
-				observable= genericObservable(
+				baseObservable= genericObservable(
 					[]
 					()->typeManager.subscriptionDefinition item
 					(observer, data,items, changeItems, deleteItems)->
@@ -161,19 +168,16 @@ define [
 					()->query = typeManager.query item.Id()
 					typeManager
 				)
-				root:observable.data.extend
-					retrieve:
-						retrieve:observable.retrieve
-					base:
-						makeQuery:observable.makeQuery
-						clearQuery:observable.clearQuery
-						
-					order:
-						makeQuery:observable.makeQuery
+				$.extend(
+					{}
+					addRetrieve baseObservable,[]
+					addBase baseObservable
+					addOrderBy baseObservable
+				)
 		singleObservable:(item,property,entityType)->
 			()->
 				typeManager = (entityManager.getType entityType.name).singleManager property
-				observable= genericObservable(
+				baseObservable= genericObservable(
 					undefined
 					()->typeManager.subscriptionDefinition item
 					(observer, data,items, changeItems, deleteItems)->
@@ -189,9 +193,7 @@ define [
 						query = typeManager.query item
 					typeManager
 				)
-				root:observable.data.extend
-					retrieve:
-						retrieve:observable.retrieve
+				$.extend {}, addRetrieve baseObservable
 
 	retriever=undefined
 	entityManager=undefined

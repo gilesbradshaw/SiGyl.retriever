@@ -18,10 +18,10 @@
 	<h1>{{hide}}</h1>
 	<input type="checkbox" checked="{{hide}}"/>
 	{{#ifnot:hide}}
-		{{#with:value.root.retrieve()}}
+		{{#with:value.retrieve()}}
 			{{#with:retrieved()}}
 				{{#with:Parent()}}
-					{{#with:root.retrieve()}}
+					{{#with:retrieve()}}
 						{{#with:retrieved()}}
 							<h1>{{Name}}</h1>  < the app??? eh?????????
 						{{/with}}
@@ -31,11 +31,11 @@
 				<h1>{{Name}}</h1>
 				{{#with:Nodes()}}
 					<ul>
-						{{#with:root.base().retrieve()}}
+						{{#with:base().orderBy("Name").retrieve()}}
 							{{#foreach:retrieved()}}
 						<li>
 							{{Name}}
-							{{#with:ScanClass().root.retrieve()}}
+							{{#with:ScanClass().retrieve()}}
 							{{#with:retrieved()}}
 							-{{Name}}
 							{{/with}}
