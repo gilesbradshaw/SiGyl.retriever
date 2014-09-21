@@ -31,7 +31,7 @@
 				<h1>{{Name}}</h1>
 				{{#with:Nodes()}}
 					<ul>
-						{{#with:root.retrieve()}}
+						{{#with:root.base().retrieve()}}
 							{{#foreach:retrieved()}}
 						<li>
 							{{Name}}

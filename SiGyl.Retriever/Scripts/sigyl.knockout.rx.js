@@ -73,18 +73,21 @@
 
         return subscribable;
     }
-    function addDispose(observable, dispose) {
+    function addSubscribeDispose(observable, subscribe, dispose) {
         var subscriptions = [];
         var oldSubscribe = observable.subscribe.bind(observable);
         observable.subscribe = function (callback, callbackTarget, event) {
             var oldDispose, ret;
             ret = oldSubscribe(callback, callbackTarget, event);
-
+            if (!subscriptions.length) {
+            	subscribe();
+            }
             subscriptions.push(ret);
             oldDispose = ret.dispose;
             ret.dispose = function () {
                 subscriptions.splice(subscriptions.indexOf(ret), 1);
                 oldDispose.bind(this)();
+                
                 if (!subscriptions.length) {
                     dispose();
                 }
@@ -94,8 +97,12 @@
     }
     function rx2koObservable(initialValue) {
         var observable = ko.observable(initialValue);
-        var rxSubscription = this.subscribe(observable);
-        addDispose(observable, function () {
+        var rxSubscription;
+        var _this = this;
+        addSubscribeDispose(observable,function(){
+        	rxSubscription = _this.subscribe(observable);
+        },
+		function () {
             return rxSubscription.dispose();
         });
         return observable;

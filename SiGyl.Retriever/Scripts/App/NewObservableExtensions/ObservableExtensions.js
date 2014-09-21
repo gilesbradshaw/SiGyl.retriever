@@ -26,8 +26,8 @@
       target.base = target.any = function(name) {
         ko.utils.unwrapObservable(name);
         options.clearQuery();
-        options.makeQuery(function(param) {
-          return "" + param + " from base " + (ko.utils.unwrapObservable(name));
+        options.makeQuery(function(query) {
+          return query.where("Name", "startsWith", "N");
         });
         return target;
       };
@@ -44,9 +44,10 @@
           return fn(q);
         }), baseQuery());
         retriever.subscriber(subscriptionDefinition()).then(function(sub) {
-          var preChanged, preDeleted, qex;
+          var filterFunction, preChanged, preDeleted, qex;
           preChanged = [];
           preDeleted = [];
+          filterFunction = myQuery._toFilterFunction(typeManager.breezeEntityType);
           qex = typeManager.executeQuery(myQuery);
           qex.then(function(retrievedData) {
             data = changeDataProcessor(observer, data, retrievedData.storedResults, preChanged, preDeleted);
@@ -57,18 +58,24 @@
             return alert(err);
           });
           return disposer = sub().subscribe(function(x) {
+            var deleted;
+            deleted = x.deleted;
             if (x.changed) {
-              if (preChanged) {
-                preChanged.push(x.changed);
+              if (!filterFunction(x.changed)) {
+                deleted = x.changed;
               } else {
-                data = changeDataProcessor(observer, data, void 0, [x.changed]);
+                if (preChanged) {
+                  preChanged.push(x.changed);
+                } else {
+                  data = changeDataProcessor(observer, data, void 0, [x.changed]);
+                }
               }
             }
-            if (x.deleted) {
+            if (deleted) {
               if (preDeleted) {
-                return preDeleted.push(x.deleted);
+                return preDeleted.push(deleted);
               } else {
-                return data = changeDataProcessor(observer, data, void 0, void 0, [x.deleted]);
+                return data = changeDataProcessor(observer, data, void 0, void 0, [deleted]);
               }
             }
           });
@@ -173,7 +180,7 @@
           observable = genericObservable([], function() {
             return typeManager.subscriptionDefinition(item);
           }, function(observer, data, items, changeItems, deleteItems) {
-            var changed, i, _i, _j, _len, _len1, _ref, _ref1;
+            var changed, i, _i, _len, _ref;
             changed = false;
             if (items) {
               data = items;
@@ -181,7 +188,7 @@
             }
             if (changeItems) {
               _ref = linq.From(changeItems).Where(function(ci) {
-                return data().indexOf(ci) < 0;
+                return data.indexOf(ci) < 0;
               }).ToArray();
               for (_i = 0, _len = _ref.length; _i < _len; _i++) {
                 i = _ref[_i];
@@ -190,14 +197,13 @@
               }
             }
             if (deleteItems) {
-              _ref1 = linq.From(deleteItems).Where(function(ci) {
-                return data().indexOf(ci) >= 0;
-              }).ToArray();
-              for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-                i = _ref1[_j];
-                data.remove(i);
-                changed = true;
-              }
+              deleteItems.map(function(d) {
+                var di;
+                if ((di = data.indexOf(d)) >= 0) {
+                  data.splice(data.indexOf(i), 1);
+                  return changed = true;
+                }
+              });
             }
             if (changed) {
               observer.onNext(data);
@@ -211,6 +217,13 @@
             root: observable.data.extend({
               retrieve: {
                 retrieve: observable.retrieve
+              },
+              base: {
+                makeQuery: observable.makeQuery,
+                clearQuery: observable.clearQuery
+              },
+              order: {
+                makeQuery: observable.makeQuery
               }
             })
           };

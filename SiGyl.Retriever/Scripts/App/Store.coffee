@@ -11,6 +11,7 @@ define [
 
 
 	updateEntity=(entityType, from, _to)->
+		return
 		utils.getMe().process entityType.property, (property)=>
 			if (property.name of from)
 				if ko.isObservable _to[property.name]
@@ -28,6 +29,8 @@ define [
 	newEntity=(from, model,entityType,modelExtensions)->
 
 		ret = {}
+		ret.__proto__ = from.__proto__
+		ret._entityAspect = from._entityAspect
 		for property in entityType.property
 			ret[property.name] = from[property.name]
 			
@@ -100,7 +103,6 @@ define [
 									parameterGroup.Collection.data = result
 				data
 			@changeData=(id,type,value)=>
-				value = mapping.fromJS value
 				entityType = conceptualModel.entityTypes[type.split('.')[0]]
 				if entityType
 					if type.split('.').length is 2

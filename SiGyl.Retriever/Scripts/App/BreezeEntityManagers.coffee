@@ -1,14 +1,16 @@
 ﻿# CoffeeScript
 define [
 	"jquery"
+	"knockout"
 	"Q"
+	"b64"
 	"linq"
 	"breeze"
 	"store"
 	"utils"
 	"source"
 	"rx.binding"
-],($,Q,linq,breeze,Store,utils, source,rx) ->
+],($,ko,Q,b64,linq,breeze,Store,utils, source,rx) ->
 
 
 	getMetaData=(url)->
@@ -41,11 +43,13 @@ define [
 						typeManager = breezeRetriever.getType type.split('.')[0]
 						if type.split('.').length>1
 							typeManager= typeManager.collectionManager type.split('.')[1]
-							
-						entType = typeManager.manager.metadataStore.getEntityType typeManager.entityType.name
+						if typeManager.entityType.data[data.Id]
+							if b64.compare ko.utils.unwrapObservable(data.Timestamp), ko.utils.unwrapObservable(typeManager.entityType.data[data.Id].Timestamp)
+								return
+						entType = typeManager.breezeEntityType
 						newData = entType.createEntity data
-						typeManager.manager.attachEntity newData, breeze.EntityState.Unchanged,breeze.MergeStrategy.OverwriteChanges
-						changed = breezeRetriever.getStore(type.split('.')[0]).changeData(id,type,data)
+						attachedEntity = typeManager.manager.attachEntity newData, breeze.EntityState.Unchanged,breeze.MergeStrategy.OverwriteChanges
+						changed = breezeRetriever.getStore(type.split('.')[0]).changeData(id,type,newData)
 						if changed
 							if type.split('.').length==2
 								subject = "#{type.split('.')[0]}:.#{type.split('.')[1]}:#{id}"
@@ -60,6 +64,7 @@ define [
 					getManager=(type)->
 						linq.From(managers).Single((m)-> linq.From(m.metadata.schema.entityContainer.entitySet).SingleOrDefault(undefined,(eset)-> eset.entityType is "Self.#{type}"))
 					getTypeManager=(manager,entityType,query,entityContainer)->
+						breezeEntityType:manager.manager.metadataStore.getEntityType entityType.name
 						manager:manager.manager
 						namespace:manager.metadata.schema.namespace
 						entityContainer:entityContainer

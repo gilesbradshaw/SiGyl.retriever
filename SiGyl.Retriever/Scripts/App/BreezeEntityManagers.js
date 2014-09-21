@@ -1,5 +1,5 @@
 (function() {
-  define(["jquery", "Q", "linq", "breeze", "store", "utils", "source", "rx.binding"], function($, Q, linq, breeze, Store, utils, source, rx) {
+  define(["jquery", "knockout", "Q", "b64", "linq", "breeze", "store", "utils", "source", "rx.binding"], function($, ko, Q, b64, linq, breeze, Store, utils, source, rx) {
     var deferred, getMetaData, retrieveSubjects;
     getMetaData = function(url) {
       var getMetaDataDeferred, manager, metadataFetch;
@@ -39,15 +39,20 @@
             return source.initMe().then(function() {
               var breezeRetriever, getManager, getTypeManager;
               source.getMe().on("change", function(id, type, data) {
-                var changed, entType, newData, subject, typeManager;
+                var attachedEntity, changed, entType, newData, subject, typeManager;
                 typeManager = breezeRetriever.getType(type.split('.')[0]);
                 if (type.split('.').length > 1) {
                   typeManager = typeManager.collectionManager(type.split('.')[1]);
                 }
-                entType = typeManager.manager.metadataStore.getEntityType(typeManager.entityType.name);
+                if (typeManager.entityType.data[data.Id]) {
+                  if (b64.compare(ko.utils.unwrapObservable(data.Timestamp), ko.utils.unwrapObservable(typeManager.entityType.data[data.Id].Timestamp))) {
+                    return;
+                  }
+                }
+                entType = typeManager.breezeEntityType;
                 newData = entType.createEntity(data);
-                typeManager.manager.attachEntity(newData, breeze.EntityState.Unchanged, breeze.MergeStrategy.OverwriteChanges);
-                changed = breezeRetriever.getStore(type.split('.')[0]).changeData(id, type, data);
+                attachedEntity = typeManager.manager.attachEntity(newData, breeze.EntityState.Unchanged, breeze.MergeStrategy.OverwriteChanges);
+                changed = breezeRetriever.getStore(type.split('.')[0]).changeData(id, type, newData);
                 if (changed) {
                   if (type.split('.').length === 2) {
                     subject = "" + (type.split('.')[0]) + ":." + (type.split('.')[1]) + ":" + id;
@@ -74,6 +79,7 @@
               };
               getTypeManager = function(manager, entityType, query, entityContainer) {
                 return {
+                  breezeEntityType: manager.manager.metadataStore.getEntityType(entityType.name),
                   manager: manager.manager,
                   namespace: manager.metadata.schema.namespace,
                   entityContainer: entityContainer,

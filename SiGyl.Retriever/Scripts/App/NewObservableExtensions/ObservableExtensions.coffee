@@ -28,7 +28,7 @@ define [
 		target.base= target.any=(name)->
 			ko.utils.unwrapObservable name
 			options.clearQuery()
-			options.makeQuery (param)->"#{param} from base #{ko.utils.unwrapObservable name}"
+			options.makeQuery (query)-> query.where "Name", "startsWith", "N"
 			target
 		target
 
@@ -45,6 +45,7 @@ define [
 			retriever.subscriber(subscriptionDefinition()).then (sub)->
 				preChanged=[]
 				preDeleted=[]
+				filterFunction = myQuery._toFilterFunction typeManager.breezeEntityType
 				qex= typeManager.executeQuery(myQuery)
 				qex.then (retrievedData)->
 					data = changeDataProcessor observer, data, retrievedData.storedResults, preChanged, preDeleted
@@ -52,16 +53,20 @@ define [
 					preDeleted=undefined
 				qex.fail (err)->alert err
 				disposer = sub().subscribe (x)->
+					deleted = x.deleted
 					if x.changed
-						if preChanged
-							preChanged.push x.changed
+						if !filterFunction x.changed
+							deleted=x.changed
 						else
-							data = changeDataProcessor observer, data,undefined,[x.changed]
-					if x.deleted
+							if preChanged
+								preChanged.push x.changed
+							else
+								data = changeDataProcessor observer, data,undefined,[x.changed]
+					if deleted
 						if preDeleted
-							preDeleted.push x.deleted
+							preDeleted.push deleted
 						else
-							data = changeDataProcessor observer, data, undefined, undefined,[x.deleted]
+							data = changeDataProcessor observer, data, undefined, undefined,[deleted]
 			
 			()->
 				if disposer
@@ -142,13 +147,14 @@ define [
 							data = items
 							changed= true
 						if changeItems
-							for i in linq.From(changeItems).Where((ci)->data().indexOf(ci) <0).ToArray()
+							for i in linq.From(changeItems).Where((ci)->data.indexOf(ci) <0).ToArray()
 								data.push i
 								changed= true
 						if deleteItems
-							for i in linq.From(deleteItems).Where((ci)->data().indexOf(ci) >=0).ToArray()
-								data.remove i
-								changed= true
+							deleteItems.map (d)->
+								if (di = data.indexOf(d))>=0
+									data.splice data.indexOf(i), 1
+									changed=true
 						if changed
 							observer.onNext data
 						data
@@ -158,6 +164,12 @@ define [
 				root:observable.data.extend
 					retrieve:
 						retrieve:observable.retrieve
+					base:
+						makeQuery:observable.makeQuery
+						clearQuery:observable.clearQuery
+						
+					order:
+						makeQuery:observable.makeQuery
 		singleObservable:(item,property,entityType)->
 			()->
 				typeManager = (entityManager.getType entityType.name).singleManager property

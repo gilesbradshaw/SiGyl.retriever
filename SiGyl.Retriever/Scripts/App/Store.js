@@ -2,6 +2,7 @@
   define(["knockout", "knockout.mapping", "b64", "linq", "observableExtensions", "utils", "Q"], function(ko, mapping, b64, linq, observableExtensionsMain, utils, Q) {
     var Store, getKey, newEntity, updateEntity;
     updateEntity = function(entityType, from, _to) {
+      return;
       utils.getMe().process(entityType.property, (function(_this) {
         return function(property) {
           if (property.name in from) {
@@ -21,6 +22,8 @@
     newEntity = function(from, model, entityType, modelExtensions) {
       var history, property, ret, _i, _j, _len, _len1, _ref, _ref1;
       ret = {};
+      ret.__proto__ = from.__proto__;
+      ret._entityAspect = from._entityAspect;
       _ref = entityType.property;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         property = _ref[_i];
@@ -141,7 +144,6 @@
         this.changeData = (function(_this) {
           return function(id, type, value) {
             var currentValue, entityType, key;
-            value = mapping.fromJS(value);
             entityType = conceptualModel.entityTypes[type.split('.')[0]];
             if (entityType) {
               if (type.split('.').length === 2) {
