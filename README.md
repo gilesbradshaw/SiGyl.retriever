@@ -1,7 +1,7 @@
 SiGyl.retriever
 ===============
 
-retrieves subscribes to and unsubscribes from data 
+retrieves, subscribes to and unsubscribes from data 
 
 
 	{{#with:get()}}
@@ -16,10 +16,14 @@ retrieves subscribes to and unsubscribes from data
 				<ul>
 				{{#with:selectMany("Zones")}}
 					{{#with:got()}}
-						{{#with:where("Name", "startsWith","z").get()}}
-							{{#foreach:got()}}
-								<li>{{Name}}</li>
-							{{/foreach}}
+						{{#with:selectMany("Units")}}
+							{{#with:got()}}
+								{{#with:where("Name", "startsWith","d").get()}}
+									{{#foreach:got()}}
+										<li>{{Name}}</li>
+									{{/foreach}}
+								{{/with}}
+							{{/with}}
 						{{/with}}
 					{{/with}}
 				{{/with}}
