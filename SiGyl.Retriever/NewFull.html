@@ -20,33 +20,47 @@
 	{{#ifnot:hide}}
 		{{#with:value.get()}}
 			{{#with:got()}}
-				{{#with:Parent().get()}}
+				{{#with:Application().get()}}
 					{{#with:got()}}
-						<h1>{{Name}}</h1>  < the app??? eh?????????
+						<h1>{{Id}} {{Name}}</h1>  < the app??? eh?????????
 					{{/with}}
 				{{/with}}
 			
-				<h1>{{Name}}</h1>
-				{{#with:Nodes()}}
+				{{#with:Sites()}}
 					<ul>
-						{{#with:base().orderBy("Name").skip(2).take(3).get()}}
-							{{#foreach:got()}}
-								<li>
-									{{Name}}
-									{{#with:ScanClass().get()}}
-									{{#with:got()}}
-									-{{Name}}
-									{{/with}}
-									{{/with}}
-								</li>
-							{{/foreach}}
-						{{/with}}
+					{{#with:selectMany("Zones")}}
+					{{#with:got()}}
+					{{#with:where("Name", "startsWith","z").get()}}
+						{{#foreach:got()}}
+						<li>NNNAAAME {{Name}}</li>
+						{{/foreach}}
+					{{/with}}
+					{{/with}}
+						
+					{{/with}}
 					</ul>
 				{{/with}}
+			<h1>{{Name}}</h1>
+			{{#with:Sites()}}
+			<ul>
+				{{#with:orderBy("Name").skip(0).take(40).get()}}
+				{{#foreach:got()}}
+				<li>
+					{{Name}}
+					{{#with:Enterprise().get()}}
+					{{#with:got()}}
+					-{{Name}}
+					{{/with}}
+					{{/with}}
+				</li>
+				{{/foreach}}
+				{{/with}}
+			</ul>
 			{{/with}}
 		{{/with}}
-	{{/if}}
-	
+		{{/with}}
+		{{/if}}
+
 </body>
 
 </html>

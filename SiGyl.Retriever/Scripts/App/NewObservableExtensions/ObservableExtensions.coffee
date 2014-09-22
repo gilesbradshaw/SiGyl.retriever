@@ -6,19 +6,19 @@ define [
 	"linq"
 	"utils"
 	"rx"
+	"breeze"
 	"knockout.rx"
 	"observableExtensions.listener"
-],(ko,Q,linq,utils,rx) ->
+],(ko,Q,linq,utils,rx,breeze) ->
 
 
 	get=(baseObservable, initialData)->
 		get:()->
-			baseObservable.buildQuery()
+			#baseObservable.buildQuery()
 			got:baseObservable.observable.toKoObservable initialData
-	base=(baseObservable)=>
-		base:(name)->
-			ko.utils.unwrapObservable name
-			baseObservable.makeQuery (query)-> query.where "Name", "startsWith", "N"
+	where=(baseObservable)=>
+		where:(property,operator,value)->
+			baseObservable.makeQuery (query)-> query.where property, operator, value
 			@
 	orderBy=(baseObservable)=>
 		orderBy:(field)->
@@ -32,27 +32,18 @@ define [
 		take:(count)->
 			baseObservable.makeQuery (query)-> query.take ko.utils.unwrapObservable count
 			@
-	ko.extenders.get=(target, options)->
-		target.get= (name)->
-			options.get()
-			got:()->target
-		target
-
-	ko.extenders.order=(target, options)->
-		target.order=(name)->
-			ko.utils.unwrapObservable name
-			options.makeQuery (param)->"#{param} from order #{ko.utils.unwrapObservable name}"
-			target
-		target
-
-	ko.extenders.base=(target, options)->
-		target.base= target.any=(name)->
-			ko.utils.unwrapObservable name
-			options.clearQuery()
-			options.makeQuery (query)-> query.where "Name", "startsWith", "N"
-			target
-		target
-
+	selectMany=(baseObservable)=>
+		selectMany:(collection)->
+			baseObservable.buildQuery()
+			observable = baseObservable.observable.selectMany (x)->
+				rx.Observable.create (observer)->
+					observer.onNext observableExtensions.manyObservable(x, baseObservable.typeManager.entityType.name, collection)()
+					
+				#.observable
+				
+			got:observable.toKoObservable()
+			
+			
 
 
 
@@ -62,10 +53,10 @@ define [
 		myQuery=undefined
 		observable= rx.Observable.create (observer)->
 			disposer=undefined
-			
+			baseObservable.buildQuery()
 			filterFunction = myQuery._toFilterFunction typeManager.breezeEntityType
 			toOrderByComparer=myQuery._toOrderByComparer typeManager.breezeEntityType
-			entityManager.subscriber(subscriptionDefinition()).then (sub)->
+			entityManager.subscriber(subscriptionDefinition()).then (subs)->
 				preChanged=[]
 				preDeleted=[]
 				execute= ()->
@@ -78,7 +69,7 @@ define [
 						preDeleted=undefined
 					qex.fail (err)->alert err
 				execute()
-				disposer = sub().subscribe (x)->
+				disposer = rx.Observable.merge(subs.map (sub)->sub()).subscribe (x)->
 					deleted = x.deleted
 					if x.changed
 						if !filterFunction x.changed
@@ -98,7 +89,7 @@ define [
 					if changeResult
 						if data instanceof Array
 							for index in [0..data.length-2]
-								if toOrderByComparer(data[index], data[index+1])>0
+								if data.length>1 && toOrderByComparer && toOrderByComparer(data[index], data[index+1])>0
 									needsSorting=true
 									data.sort toOrderByComparer
 									index=data.length-2
@@ -116,15 +107,16 @@ define [
 			()->
 				if disposer
 					disposer.dispose()
-
-		observable:observable
-		buildQuery:()->
-			myQuery = _queryFuncs.reduce ((q,fn)->fn q), baseQuery()
-			_queryFuncs=[]
-		makeQuery:(queryFunc)->
-			_queryFuncs.push queryFunc
-		makeMergeFunc:(mergeFunc)->
-			_mergeFuncs.push mergeFunc
+		baseObservable=
+			typeManager:typeManager
+			observable:observable
+			buildQuery:()->
+				myQuery = _queryFuncs.reduce ((q,fn)->fn q), baseQuery()
+				_queryFuncs=[]
+			makeQuery:(queryFunc)->
+				_queryFuncs.push queryFunc
+			makeMergeFunc:(mergeFunc)->
+				_mergeFuncs.push mergeFunc
 
 		
 
@@ -158,7 +150,7 @@ define [
 				typeManager = entityManager.getType type
 				baseObservable= createBaseObservable(
 					undefined
-					()->"#{type}:.:#{id}"
+					()->["#{type}:.:#{id}"]
 					(data,items,changeItems,deleteItems)->
 						oldItem= data
 						if items && items.length
@@ -172,22 +164,22 @@ define [
 							changed:false
 							data:item
 					()->
-						query = typeManager.query()
-						query=query.where "Id", "==", id
+						
+						query=typeManager.query.where "Id", "==", id
 						query
 					typeManager
 				)
 				$.extend {}, get baseObservable
-		manyObservable:(item,type,collection)->
+		manyObservable:(items,type,collection)->
 			()->
 				typeManager = (entityManager.getType type).collectionManager collection
 				baseObservable= createBaseObservable(
 					[]
-					()->typeManager.subscriptionDefinition item
-					(data,items, changeItems, deleteItems)->
+					()->items.map (i)->typeManager.subscriptionDefinition i
+					(data,newData, changeItems, deleteItems)->
 						changed=false
-						if items
-							data = items
+						if newData
+							data = newData
 							changed= true
 						if changeItems
 							for i in linq.From(changeItems).Where((ci)->data.indexOf(ci) <0).ToArray()
@@ -195,29 +187,33 @@ define [
 								changed= true
 						if deleteItems
 							deleteItems.map (d)->
-								if (di = data.indexOf(d))>=0
-									data.splice data.indexOf(i), 1
+								if (di = linq.From(data).SingleOrDefault(undefined, (dd)->dd.Id()==d.Id()))
+									data.splice data.indexOf(di), 1
 									changed=true
 						
 						changed:changed
 						data:data
-					()->query = typeManager.query item.Id()
+					()->query = typeManager.query.where breeze.Predicate.or items.map (i)-> typeManager.predicate i
 					typeManager
 				)
 				$.extend(
-					{}
+					{
+						observable:baseObservable.observable
+					}
+					
 					get baseObservable,[]
-					base baseObservable
 					orderBy baseObservable
 					skip baseObservable
 					take baseObservable
+					where baseObservable
+					selectMany baseObservable
 				)
 		singleObservable:(item,property,entityType)->
 			()->
 				typeManager = (entityManager.getType entityType.name).singleManager property
 				baseObservable= createBaseObservable(
 					undefined
-					()->typeManager.subscriptionDefinition item
+					()->[typeManager.subscriptionDefinition item]
 					(data,items, changeItems, deleteItems)->
 						oldItem= data
 						if items && items.length
@@ -231,7 +227,7 @@ define [
 							changed:false
 							data:i
 					()->
-						query = typeManager.query item
+						query = typeManager.query.where typeManager.predicate item
 					typeManager
 				)
 				$.extend {}, get baseObservable

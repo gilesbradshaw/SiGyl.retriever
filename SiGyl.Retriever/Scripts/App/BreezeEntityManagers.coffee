@@ -59,16 +59,32 @@ define [
 								retrieveSubjects[subject].observer.onNext 
 									changed:changed.value
 					source.getMe().on "delete", (id,type,data)->
-						toDelete = breezeRetriever.getStore(type.split('.')[0]).deleteData id,type,data
+						
+						typeManager = breezeRetriever.getType type.split('.')[0]
+						if type.split('.').length>1
+							typeManager= typeManager.collectionManager type.split('.')[1]
+						entType = typeManager.breezeEntityType
+						entityToDelete =  typeManager.manager.getEntityByKey entType, data.Id
+						if typeManager.manager.detachEntity entityToDelete, breeze.EntityState.Unchanged,breeze.MergeStrategy.OverwriteChanges
+							toDelete = breezeRetriever.getStore(type.split('.')[0]).deleteData id,type,entityToDelete
+							if toDelete
+								if type.split('.').length==2
+									subject = "#{type.split('.')[0]}:.#{type.split('.')[1]}:#{id}"
+								else
+									subject ="#{type}:.:#{id}"
+								if retrieveSubjects[subject]
+									retrieveSubjects[subject].observer.onNext 
+										deleted:entityToDelete
 						
 					getManager=(type)->
 						linq.From(managers).Single((m)-> linq.From(m.metadata.schema.entityContainer.entitySet).SingleOrDefault(undefined,(eset)-> eset.entityType is "Self.#{type}"))
-					getTypeManager=(manager,entityType,query,entityContainer)->
+					getTypeManager=(manager,entityType,query,predicate,entityContainer)->
 						breezeEntityType:manager.manager.metadataStore.getEntityType entityType.name
 						manager:manager.manager
 						namespace:manager.metadata.schema.namespace
 						entityContainer:entityContainer
 						query:query
+						predicate:predicate
 						executeQuery:(query)->
 							queryUri=  query._toUri manager.manager.metadataStore
 							manager.executingQueries[queryUri] or = manager.manager.executeQuery(query).then (retrievedData)->
@@ -77,32 +93,39 @@ define [
 									storedResults:retrievedData.results.map (r)-> manager.store.mergeData entityType.name, r
 						entityType:entityType
 					breezeRetriever=
-						subscriber:(subscriptionDefinition)->
-							if !retrieveSubjects[subscriptionDefinition]
-								subject=rx.Observable.create (observer)->
-									retrieveSubjects[subscriptionDefinition].observer = observer
-									()-> 
-										delete retrieveSubjects[subscriptionDefinition]
-										source.getMe().invoke( 
-											"NewLeave"
-											subscriptionDefinition
-										)
+						subscriber:(subscriptionDefinitions)->
+							all = Q.all subscriptionDefinitions.map (subscriptionDefinition)->
+								subscriptionsToMake=[]
+								if !retrieveSubjects[subscriptionDefinition]
+									subject=rx.Observable.create (observer)->
+										retrieveSubjects[subscriptionDefinition].observer = observer
+										()-> 
+											delete retrieveSubjects[subscriptionDefinition]
+											source.getMe().invoke( 
+												"NewLeave"
+												[subscriptionDefinition]
+											)
 				
-								retrieveSubjects[subscriptionDefinition] = 
-									subject:subject
-									share: subject.share()
-									subscriptionDeferred: Q.defer()
-								source.getMe().invoke( 
-									"NewJoin"
-									subscriptionDefinition
-								).done(()->
-									if retrieveSubjects[subscriptionDefinition]
-										retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve ()->retrieveSubjects[subscriptionDefinition].share
-								).fail (err)->
-									if retrieveSubjects[subscriptionDefinition]
-										retrieveSubjects[subscriptionDefinition].subscriptionDeferred.reject err
+									retrieveSubjects[subscriptionDefinition] = 
+										subject:subject
+										share: subject.share()
+										subscriptionDeferred: Q.defer()
+									subscriptionsToMake.push subscriptionDefinition
+								if subscriptionsToMake.length
+									source.getMe().invoke( 
+										"NewJoin"
+										subscriptionsToMake
+									).done(()->
+										subscriptionsToMake.map (sub)->
+											if retrieveSubjects[sub]
+												retrieveSubjects[sub].subscriptionDeferred.resolve ()->retrieveSubjects[sub].share
+									).fail (err)->
+										subscriptionsToMake.map (sub)->
+											if retrieveSubjects[sub]
+												retrieveSubjects[sub].subscriptionDeferred.reject err
 				
-							retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise
+								retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise
+							#all.then (subscriptions)->subscriptions[0]
 						
 						getStore:(type)->
 							getManager(type).store
@@ -110,17 +133,18 @@ define [
 							manager = getManager type
 							entityType=linq.From(manager.metadata.schema.entityType).Single((et)->et.name==type)
 							entityContainer= linq.From(manager.metadata.schema.entityContainer.entitySet).Single((eset)-> eset.entityType is "Self.#{type}").name
-							$.extend getTypeManager(manager,entityType,(()->breeze.EntityQuery.from(entityContainer)),entityContainer),
+							$.extend getTypeManager(manager,entityType,breeze.EntityQuery.from(entityContainer),undefined, entityContainer),
 								subscriptionDefinition:(item)->"#{entityType.name}:.:#{item.Id()}"
 								collectionManager:(collection)->
 									dependent= utils.getMe().getDependent entityType, collection
 									collectionEntityContainer= linq.From(manager.metadata.schema.entityContainer.entitySet).Single((eset)-> eset.entityType.split('.')[1] is dependent.type())
 									collectionEntityType = entityType.model.entityTypes[collectionEntityContainer.entityType.split('.')[1]]
-									query=(id)->
-										q= breeze.EntityQuery.from(collectionEntityContainer.name).inlineCount().where dependent.id(), '==', id
-										q=q.where dependent.id(), '==', id
-										q
-									$.extend getTypeManager(manager,collectionEntityType,query,collectionEntityContainer),
+									query=breeze.EntityQuery.from(collectionEntityContainer.name).inlineCount()#.where dependent.id(), '==', id
+										#q=q.where dependent.id(), '==', id
+										#q
+									predicate=(item)->
+										new breeze.Predicate dependent.id(), '==', item.Id()
+									$.extend getTypeManager(manager,collectionEntityType,query,predicate,collectionEntityContainer),
 										subscriptionDefinition:(item)->"#{entityType.name}:.#{collection}:#{item.Id()}"
 									
 								singleManager:(single)->
@@ -128,8 +152,9 @@ define [
 									dependent= utils.getMe().getDependent entityType, single
 									singleEntityContainer= linq.From(manager.metadata.schema.entityContainer.entitySet).Single((eset)-> eset.entityType.split('.')[1] is principal.type())
 									entityType=entityType.model.entityTypes[singleEntityContainer.entityType.split('.')[1]]
-									query=(item)->breeze.EntityQuery.from(singleEntityContainer.name).inlineCount().where "Id", '==', item[dependent.id()]()
-									$.extend getTypeManager(manager,entityType,query,singleEntityContainer),
+									query=breeze.EntityQuery.from(singleEntityContainer.name).inlineCount()#.where "Id", '==', item[dependent.id()]()
+									predicate = (item)->new breeze.Predicate "Id", '==', item[dependent.id()]()
+									$.extend getTypeManager(manager,entityType,query,predicate,singleEntityContainer),
 										subscriptionDefinition:(item)->"#{entityType.name}:.:#{item[dependent.id()]()}"
 
 						#getCollectionType:(type)->

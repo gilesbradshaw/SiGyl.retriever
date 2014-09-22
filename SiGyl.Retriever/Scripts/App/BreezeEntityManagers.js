@@ -67,8 +67,28 @@
                 }
               });
               source.getMe().on("delete", function(id, type, data) {
-                var toDelete;
-                return toDelete = breezeRetriever.getStore(type.split('.')[0]).deleteData(id, type, data);
+                var entType, entityToDelete, subject, toDelete, typeManager;
+                typeManager = breezeRetriever.getType(type.split('.')[0]);
+                if (type.split('.').length > 1) {
+                  typeManager = typeManager.collectionManager(type.split('.')[1]);
+                }
+                entType = typeManager.breezeEntityType;
+                entityToDelete = typeManager.manager.getEntityByKey(entType, data.Id);
+                if (typeManager.manager.detachEntity(entityToDelete, breeze.EntityState.Unchanged, breeze.MergeStrategy.OverwriteChanges)) {
+                  toDelete = breezeRetriever.getStore(type.split('.')[0]).deleteData(id, type, entityToDelete);
+                  if (toDelete) {
+                    if (type.split('.').length === 2) {
+                      subject = "" + (type.split('.')[0]) + ":." + (type.split('.')[1]) + ":" + id;
+                    } else {
+                      subject = "" + type + ":.:" + id;
+                    }
+                    if (retrieveSubjects[subject]) {
+                      return retrieveSubjects[subject].observer.onNext({
+                        deleted: entityToDelete
+                      });
+                    }
+                  }
+                }
               });
               getManager = function(type) {
                 return linq.From(managers).Single(function(m) {
@@ -77,13 +97,14 @@
                   });
                 });
               };
-              getTypeManager = function(manager, entityType, query, entityContainer) {
+              getTypeManager = function(manager, entityType, query, predicate, entityContainer) {
                 return {
                   breezeEntityType: manager.manager.metadataStore.getEntityType(entityType.name),
                   manager: manager.manager,
                   namespace: manager.metadata.schema.namespace,
                   entityContainer: entityContainer,
                   query: query,
+                  predicate: predicate,
                   executeQuery: function(query) {
                     var queryUri, _base;
                     queryUri = query._toUri(manager.manager.metadataStore);
@@ -100,34 +121,45 @@
                 };
               };
               return breezeRetriever = {
-                subscriber: function(subscriptionDefinition) {
-                  var subject;
-                  if (!retrieveSubjects[subscriptionDefinition]) {
-                    subject = rx.Observable.create(function(observer) {
-                      retrieveSubjects[subscriptionDefinition].observer = observer;
-                      return function() {
-                        delete retrieveSubjects[subscriptionDefinition];
-                        return source.getMe().invoke("NewLeave", subscriptionDefinition);
+                subscriber: function(subscriptionDefinitions) {
+                  var all;
+                  return all = Q.all(subscriptionDefinitions.map(function(subscriptionDefinition) {
+                    var subject, subscriptionsToMake;
+                    subscriptionsToMake = [];
+                    if (!retrieveSubjects[subscriptionDefinition]) {
+                      subject = rx.Observable.create(function(observer) {
+                        retrieveSubjects[subscriptionDefinition].observer = observer;
+                        return function() {
+                          delete retrieveSubjects[subscriptionDefinition];
+                          return source.getMe().invoke("NewLeave", [subscriptionDefinition]);
+                        };
+                      });
+                      retrieveSubjects[subscriptionDefinition] = {
+                        subject: subject,
+                        share: subject.share(),
+                        subscriptionDeferred: Q.defer()
                       };
-                    });
-                    retrieveSubjects[subscriptionDefinition] = {
-                      subject: subject,
-                      share: subject.share(),
-                      subscriptionDeferred: Q.defer()
-                    };
-                    source.getMe().invoke("NewJoin", subscriptionDefinition).done(function() {
-                      if (retrieveSubjects[subscriptionDefinition]) {
-                        return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.resolve(function() {
-                          return retrieveSubjects[subscriptionDefinition].share;
+                      subscriptionsToMake.push(subscriptionDefinition);
+                    }
+                    if (subscriptionsToMake.length) {
+                      source.getMe().invoke("NewJoin", subscriptionsToMake).done(function() {
+                        return subscriptionsToMake.map(function(sub) {
+                          if (retrieveSubjects[sub]) {
+                            return retrieveSubjects[sub].subscriptionDeferred.resolve(function() {
+                              return retrieveSubjects[sub].share;
+                            });
+                          }
                         });
-                      }
-                    }).fail(function(err) {
-                      if (retrieveSubjects[subscriptionDefinition]) {
-                        return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.reject(err);
-                      }
-                    });
-                  }
-                  return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise;
+                      }).fail(function(err) {
+                        return subscriptionsToMake.map(function(sub) {
+                          if (retrieveSubjects[sub]) {
+                            return retrieveSubjects[sub].subscriptionDeferred.reject(err);
+                          }
+                        });
+                      });
+                    }
+                    return retrieveSubjects[subscriptionDefinition].subscriptionDeferred.promise;
+                  }));
                 },
                 getStore: function(type) {
                   return getManager(type).store;
@@ -141,43 +173,40 @@
                   entityContainer = linq.From(manager.metadata.schema.entityContainer.entitySet).Single(function(eset) {
                     return eset.entityType === ("Self." + type);
                   }).name;
-                  return $.extend(getTypeManager(manager, entityType, (function() {
-                    return breeze.EntityQuery.from(entityContainer);
-                  }), entityContainer), {
+                  return $.extend(getTypeManager(manager, entityType, breeze.EntityQuery.from(entityContainer), void 0, entityContainer), {
                     subscriptionDefinition: function(item) {
                       return "" + entityType.name + ":.:" + (item.Id());
                     },
                     collectionManager: function(collection) {
-                      var collectionEntityContainer, collectionEntityType, dependent, query;
+                      var collectionEntityContainer, collectionEntityType, dependent, predicate, query;
                       dependent = utils.getMe().getDependent(entityType, collection);
                       collectionEntityContainer = linq.From(manager.metadata.schema.entityContainer.entitySet).Single(function(eset) {
                         return eset.entityType.split('.')[1] === dependent.type();
                       });
                       collectionEntityType = entityType.model.entityTypes[collectionEntityContainer.entityType.split('.')[1]];
-                      query = function(id) {
-                        var q;
-                        q = breeze.EntityQuery.from(collectionEntityContainer.name).inlineCount().where(dependent.id(), '==', id);
-                        q = q.where(dependent.id(), '==', id);
-                        return q;
+                      query = breeze.EntityQuery.from(collectionEntityContainer.name).inlineCount();
+                      predicate = function(item) {
+                        return new breeze.Predicate(dependent.id(), '==', item.Id());
                       };
-                      return $.extend(getTypeManager(manager, collectionEntityType, query, collectionEntityContainer), {
+                      return $.extend(getTypeManager(manager, collectionEntityType, query, predicate, collectionEntityContainer), {
                         subscriptionDefinition: function(item) {
                           return "" + entityType.name + ":." + collection + ":" + (item.Id());
                         }
                       });
                     },
                     singleManager: function(single) {
-                      var dependent, principal, query, singleEntityContainer;
+                      var dependent, predicate, principal, query, singleEntityContainer;
                       principal = utils.getMe().getPrincipal(entityType, single);
                       dependent = utils.getMe().getDependent(entityType, single);
                       singleEntityContainer = linq.From(manager.metadata.schema.entityContainer.entitySet).Single(function(eset) {
                         return eset.entityType.split('.')[1] === principal.type();
                       });
                       entityType = entityType.model.entityTypes[singleEntityContainer.entityType.split('.')[1]];
-                      query = function(item) {
-                        return breeze.EntityQuery.from(singleEntityContainer.name).inlineCount().where("Id", '==', item[dependent.id()]());
+                      query = breeze.EntityQuery.from(singleEntityContainer.name).inlineCount();
+                      predicate = function(item) {
+                        return new breeze.Predicate("Id", '==', item[dependent.id()]());
                       };
-                      return $.extend(getTypeManager(manager, entityType, query, singleEntityContainer), {
+                      return $.extend(getTypeManager(manager, entityType, query, predicate, singleEntityContainer), {
                         subscriptionDefinition: function(item) {
                           return "" + entityType.name + ":.:" + (item[dependent.id()]());
                         }

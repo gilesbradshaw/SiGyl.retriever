@@ -1,23 +1,21 @@
 (function() {
-  define(["knockout", "Q", "linq", "utils", "rx", "knockout.rx", "observableExtensions.listener"], function(ko, Q, linq, utils, rx) {
-    var base, createBaseObservable, entityManager, get, observableExtensions, orderBy, skip, take;
+  define(["knockout", "Q", "linq", "utils", "rx", "breeze", "knockout.rx", "observableExtensions.listener"], function(ko, Q, linq, utils, rx, breeze) {
+    var createBaseObservable, entityManager, get, observableExtensions, orderBy, selectMany, skip, take, where;
     get = function(baseObservable, initialData) {
       return {
         get: function() {
-          baseObservable.buildQuery();
           return {
             got: baseObservable.observable.toKoObservable(initialData)
           };
         }
       };
     };
-    base = (function(_this) {
+    where = (function(_this) {
       return function(baseObservable) {
         return {
-          base: function(name) {
-            ko.utils.unwrapObservable(name);
+          where: function(property, operator, value) {
             baseObservable.makeQuery(function(query) {
-              return query.where("Name", "startsWith", "N");
+              return query.where(property, operator, value);
             });
             return this;
           }
@@ -60,49 +58,36 @@
         };
       };
     })(this);
-    ko.extenders.get = function(target, options) {
-      target.get = function(name) {
-        options.get();
+    selectMany = (function(_this) {
+      return function(baseObservable) {
         return {
-          got: function() {
-            return target;
+          selectMany: function(collection) {
+            var observable;
+            baseObservable.buildQuery();
+            observable = baseObservable.observable.selectMany(function(x) {
+              return rx.Observable.create(function(observer) {
+                return observer.onNext(observableExtensions.manyObservable(x, baseObservable.typeManager.entityType.name, collection)());
+              });
+            });
+            return {
+              got: observable.toKoObservable()
+            };
           }
         };
       };
-      return target;
-    };
-    ko.extenders.order = function(target, options) {
-      target.order = function(name) {
-        ko.utils.unwrapObservable(name);
-        options.makeQuery(function(param) {
-          return "" + param + " from order " + (ko.utils.unwrapObservable(name));
-        });
-        return target;
-      };
-      return target;
-    };
-    ko.extenders.base = function(target, options) {
-      target.base = target.any = function(name) {
-        ko.utils.unwrapObservable(name);
-        options.clearQuery();
-        options.makeQuery(function(query) {
-          return query.where("Name", "startsWith", "N");
-        });
-        return target;
-      };
-      return target;
-    };
+    })(this);
     createBaseObservable = function(data, subscriptionDefinition, changeDataProcessor, baseQuery, typeManager) {
-      var myQuery, observable, _mergeFuncs, _queryFuncs;
+      var baseObservable, myQuery, observable, _mergeFuncs, _queryFuncs;
       _queryFuncs = [];
       _mergeFuncs = [];
       myQuery = void 0;
       observable = rx.Observable.create(function(observer) {
         var disposer, filterFunction, toOrderByComparer;
         disposer = void 0;
+        baseObservable.buildQuery();
         filterFunction = myQuery._toFilterFunction(typeManager.breezeEntityType);
         toOrderByComparer = myQuery._toOrderByComparer(typeManager.breezeEntityType);
-        entityManager.subscriber(subscriptionDefinition()).then(function(sub) {
+        entityManager.subscriber(subscriptionDefinition()).then(function(subs) {
           var execute, preChanged, preDeleted;
           preChanged = [];
           preDeleted = [];
@@ -122,7 +107,9 @@
             });
           };
           execute();
-          return disposer = sub().subscribe(function(x) {
+          return disposer = rx.Observable.merge(subs.map(function(sub) {
+            return sub();
+          })).subscribe(function(x) {
             var changeResult, deleted, index, needsSorting, _i, _ref;
             deleted = x.deleted;
             if (x.changed) {
@@ -148,7 +135,7 @@
             if (changeResult) {
               if (data instanceof Array) {
                 for (index = _i = 0, _ref = data.length - 2; 0 <= _ref ? _i <= _ref : _i >= _ref; index = 0 <= _ref ? ++_i : --_i) {
-                  if (toOrderByComparer(data[index], data[index + 1]) > 0) {
+                  if (data.length > 1 && toOrderByComparer && toOrderByComparer(data[index], data[index + 1]) > 0) {
                     needsSorting = true;
                     data.sort(toOrderByComparer);
                     index = data.length - 2;
@@ -177,7 +164,8 @@
           }
         };
       });
-      return {
+      return baseObservable = {
+        typeManager: typeManager,
         observable: observable,
         buildQuery: function() {
           myQuery = _queryFuncs.reduce((function(q, fn) {
@@ -237,7 +225,7 @@
           var baseObservable, typeManager;
           typeManager = entityManager.getType(type);
           baseObservable = createBaseObservable(void 0, function() {
-            return "" + type + ":.:" + id;
+            return ["" + type + ":.:" + id];
           }, function(data, items, changeItems, deleteItems) {
             var item, oldItem;
             oldItem = data;
@@ -260,24 +248,25 @@
             }
           }, function() {
             var query;
-            query = typeManager.query();
-            query = query.where("Id", "==", id);
+            query = typeManager.query.where("Id", "==", id);
             return query;
           }, typeManager);
           return $.extend({}, get(baseObservable));
         };
       },
-      manyObservable: function(item, type, collection) {
+      manyObservable: function(items, type, collection) {
         return function() {
           var baseObservable, typeManager;
           typeManager = (entityManager.getType(type)).collectionManager(collection);
           baseObservable = createBaseObservable([], function() {
-            return typeManager.subscriptionDefinition(item);
-          }, function(data, items, changeItems, deleteItems) {
+            return items.map(function(i) {
+              return typeManager.subscriptionDefinition(i);
+            });
+          }, function(data, newData, changeItems, deleteItems) {
             var changed, i, _i, _len, _ref;
             changed = false;
-            if (items) {
-              data = items;
+            if (newData) {
+              data = newData;
               changed = true;
             }
             if (changeItems) {
@@ -293,8 +282,10 @@
             if (deleteItems) {
               deleteItems.map(function(d) {
                 var di;
-                if ((di = data.indexOf(d)) >= 0) {
-                  data.splice(data.indexOf(i), 1);
+                if ((di = linq.From(data).SingleOrDefault(void 0, function(dd) {
+                  return dd.Id() === d.Id();
+                }))) {
+                  data.splice(data.indexOf(di), 1);
                   return changed = true;
                 }
               });
@@ -305,9 +296,13 @@
             };
           }, function() {
             var query;
-            return query = typeManager.query(item.Id());
+            return query = typeManager.query.where(breeze.Predicate.or(items.map(function(i) {
+              return typeManager.predicate(i);
+            })));
           }, typeManager);
-          return $.extend({}, get(baseObservable, []), base(baseObservable), orderBy(baseObservable), skip(baseObservable), take(baseObservable));
+          return $.extend({
+            observable: baseObservable.observable
+          }, get(baseObservable, []), orderBy(baseObservable), skip(baseObservable), take(baseObservable), where(baseObservable), selectMany(baseObservable));
         };
       },
       singleObservable: function(item, property, entityType) {
@@ -315,7 +310,7 @@
           var baseObservable, typeManager;
           typeManager = (entityManager.getType(entityType.name)).singleManager(property);
           baseObservable = createBaseObservable(void 0, function() {
-            return typeManager.subscriptionDefinition(item);
+            return [typeManager.subscriptionDefinition(item)];
           }, function(data, items, changeItems, deleteItems) {
             var i, oldItem;
             oldItem = data;
@@ -338,7 +333,7 @@
             }
           }, function() {
             var query;
-            return query = typeManager.query(item);
+            return query = typeManager.query.where(typeManager.predicate(item));
           }, typeManager);
           return $.extend({}, get(baseObservable));
         };

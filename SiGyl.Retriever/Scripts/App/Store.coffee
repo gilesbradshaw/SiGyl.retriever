@@ -43,7 +43,7 @@ define [
 			association=model.associations[navigationProperty.relationship.split('.')[1]]
 			toEnd= linq.From(association.end).Single((e)->e.role is navigationProperty.toRole)
 			if toEnd.multiplicity is "*"
-				ret[navigationProperty.name] = observableExtensionsMain.getMe().manyObservable ret,entityType.name,navigationProperty.name
+				ret[navigationProperty.name] = observableExtensionsMain.getMe().manyObservable [ret],entityType.name,navigationProperty.name
 				ret[navigationProperty.name]._navigationProperty  = ((p)->()->p)(navigationProperty)
 			else
 				ret[navigationProperty.name]= observableExtensionsMain.getMe().singleObservable ret, navigationProperty.name, entityType

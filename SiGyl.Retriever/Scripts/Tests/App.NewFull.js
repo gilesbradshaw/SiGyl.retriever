@@ -87,7 +87,7 @@
       return Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).done(function() {
         return observableExtensions.initMe().then(function() {
           var ro, roo;
-          ro = observableExtensions.getMe().rootObservable(384, "Folder");
+          ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
           roo = ro();
           return ko.applyBindings({
             value: roo,

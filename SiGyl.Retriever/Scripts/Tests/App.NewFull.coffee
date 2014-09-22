@@ -94,7 +94,7 @@ require [
 
 
 			observableExtensions.initMe().then ()->
-				ro = observableExtensions.getMe().rootObservable(384, "Folder")
+				ro = observableExtensions.getMe().rootObservable(1, "Enterprise")
 				roo= ro()
 				ko.applyBindings
 					value:roo
