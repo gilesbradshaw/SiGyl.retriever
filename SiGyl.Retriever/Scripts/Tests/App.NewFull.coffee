@@ -42,7 +42,6 @@
 require [
 	"knockout"
 	"linq"
-	"breezeEntityManagers"
 	"Q"
 	"observableExtensions"
 	"rx"
@@ -53,49 +52,45 @@ require [
 
 	
 	
-], (ko,linq,Retriever,Q,observableExtensions,rx)->
+], (ko,linq,Q,observableExtensions,rx)->
 
 	ko.punches.enableAll()
 	QUnit.asyncTest "fetch and subscribe to data", (assert)->
 		sandbox= sinon.sandbox.create()
-		Retriever.initMe( [
+		observableExtensions.initMe( [
 			"http://localhost:41374/breeze/configuration"
 			"http://localhost:41374/breeze/runtime"
 			"http://localhost:41374/breeze/history"
-		]).done ()->
-			observableExtensions.initMe().then ()->
-				ro = observableExtensions.getMe().rootObservable(1, "Enterprise")
-				roo= ro().root.retrieve().retrieved()
-				roo.subscribe (value)->
-					assert.ok value.Id()==1
-					ko.applyBindings value
-					QUnit.start()
-					return
-					koSites=value.Sites.any()() #an observablearray of sites
-					koApplication = value.Application #observable of application
+		]).then ()->
+			ro = observableExtensions.getMe().rootObservable(1, "Enterprise")
+			roo= ro().root.retrieve().retrieved()
+			roo.subscribe (value)->
+				assert.ok value.Id()==1
+				ko.applyBindings value
+				QUnit.start()
+				return
+				koSites=value.Sites.any()() #an observablearray of sites
+				koApplication = value.Application #observable of application
 
-					sites = koSites.toObservableWithReplyLatest().where((x)->x)
-					application = koApplication.toObservableWithReplyLatest().where((x)->x)
-					both = rx.Observable.when (sites.and application).then (site, application)->
-						site:site,
-						application:application
-					both.subscribe (xx)->
-						sandbox.restore()
-						QUnit.start()
+				sites = koSites.toObservableWithReplyLatest().where((x)->x)
+				application = koApplication.toObservableWithReplyLatest().where((x)->x)
+				both = rx.Observable.when (sites.and application).then (site, application)->
+					site:site,
+					application:application
+				both.subscribe (xx)->
+					sandbox.restore()
+					QUnit.start()
 						
 
 	QUnit.asyncTest "bind to dom", (assert)->
 		sandbox= sinon.sandbox.create()
-		Retriever.initMe( [
+		observableExtensions.initMe( [
 			"http://localhost:41374/breeze/configuration"
 			"http://localhost:41374/breeze/runtime"
 			"http://localhost:41374/breeze/history"
-		]).done ()->
-
-
-			observableExtensions.initMe().then ()->
-				ro = observableExtensions.getMe().rootObservable(1, "Enterprise")
-				roo= ro()
-				ko.applyBindings
-					value:roo
-					hide:ko.observable false
+		]).then ()->
+			ro = observableExtensions.getMe().rootObservable(1, "Enterprise")
+			roo= ro()
+			ko.applyBindings
+				value:roo
+				hide:ko.observable false

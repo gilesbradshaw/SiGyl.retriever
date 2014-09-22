@@ -194,6 +194,23 @@
                         }
                       });
                     },
+                    interModelManager: function(property) {
+                      var interModelEntityType, myManager, predicate, query, relation;
+                      relation = linq.From(entityType.interModelRelations).Single(function(i) {
+                        return i.name === property;
+                      });
+                      myManager = getManager(relation.name);
+                      interModelEntityType = myManager.metadata.schema.entityTypes[relation.name];
+                      query = breeze.EntityQuery.from(relation.collection).inlineCount();
+                      predicate = function(item) {
+                        return new breeze.Predicate(relation.foreignKey, '==', item.Id());
+                      };
+                      return $.extend(getTypeManager(myManager, interModelEntityType, query, predicate, relation.collection), {
+                        subscriptionDefinition: function(item) {
+                          return "" + relation.name + ":.:" + (item.Id());
+                        }
+                      });
+                    },
                     singleManager: function(single) {
                       var dependent, predicate, principal, query, singleEntityContainer;
                       principal = utils.getMe().getPrincipal(entityType, single);

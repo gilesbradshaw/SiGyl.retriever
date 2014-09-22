@@ -43,40 +43,38 @@
     }
   });
 
-  require(["knockout", "linq", "breezeEntityManagers", "Q", "observableExtensions", "rx", "rx.joinpatterns", "knockout.rx", "sinonie", "knockout.punches"], function(ko, linq, Retriever, Q, observableExtensions, rx) {
+  require(["knockout", "linq", "Q", "observableExtensions", "rx", "rx.joinpatterns", "knockout.rx", "sinonie", "knockout.punches"], function(ko, linq, Q, observableExtensions, rx) {
     ko.punches.enableAll();
     QUnit.asyncTest("fetch and subscribe to data", function(assert) {
       var sandbox;
       sandbox = sinon.sandbox.create();
-      return Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).done(function() {
-        return observableExtensions.initMe().then(function() {
-          var ro, roo;
-          ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
-          roo = ro().root.retrieve().retrieved();
-          return roo.subscribe(function(value) {
-            var application, both, koApplication, koSites, sites;
-            assert.ok(value.Id() === 1);
-            ko.applyBindings(value);
-            QUnit.start();
-            return;
-            koSites = value.Sites.any()();
-            koApplication = value.Application;
-            sites = koSites.toObservableWithReplyLatest().where(function(x) {
-              return x;
-            });
-            application = koApplication.toObservableWithReplyLatest().where(function(x) {
-              return x;
-            });
-            both = rx.Observable.when((sites.and(application)).then(function(site, application) {
-              return {
-                site: site,
-                application: application
-              };
-            }));
-            return both.subscribe(function(xx) {
-              sandbox.restore();
-              return QUnit.start();
-            });
+      return observableExtensions.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).then(function() {
+        var ro, roo;
+        ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
+        roo = ro().root.retrieve().retrieved();
+        return roo.subscribe(function(value) {
+          var application, both, koApplication, koSites, sites;
+          assert.ok(value.Id() === 1);
+          ko.applyBindings(value);
+          QUnit.start();
+          return;
+          koSites = value.Sites.any()();
+          koApplication = value.Application;
+          sites = koSites.toObservableWithReplyLatest().where(function(x) {
+            return x;
+          });
+          application = koApplication.toObservableWithReplyLatest().where(function(x) {
+            return x;
+          });
+          both = rx.Observable.when((sites.and(application)).then(function(site, application) {
+            return {
+              site: site,
+              application: application
+            };
+          }));
+          return both.subscribe(function(xx) {
+            sandbox.restore();
+            return QUnit.start();
           });
         });
       });
@@ -84,15 +82,13 @@
     return QUnit.asyncTest("bind to dom", function(assert) {
       var sandbox;
       sandbox = sinon.sandbox.create();
-      return Retriever.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).done(function() {
-        return observableExtensions.initMe().then(function() {
-          var ro, roo;
-          ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
-          roo = ro();
-          return ko.applyBindings({
-            value: roo,
-            hide: ko.observable(false)
-          });
+      return observableExtensions.initMe(["http://localhost:41374/breeze/configuration", "http://localhost:41374/breeze/runtime", "http://localhost:41374/breeze/history"]).then(function() {
+        var ro, roo;
+        ro = observableExtensions.getMe().rootObservable(1, "Enterprise");
+        roo = ro();
+        return ko.applyBindings({
+          value: roo,
+          hide: ko.observable(false)
         });
       });
     });

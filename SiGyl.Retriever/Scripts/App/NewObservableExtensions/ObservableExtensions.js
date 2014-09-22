@@ -1,5 +1,5 @@
 (function() {
-  define(["knockout", "Q", "linq", "utils", "rx", "breeze", "knockout.rx", "observableExtensions.listener"], function(ko, Q, linq, utils, rx, breeze) {
+  define(["knockout", "Q", "linq", "utils", "rx", "breeze", "knockout.rx"], function(ko, Q, linq, utils, rx, breeze) {
     var createBaseObservable, entityManager, get, observableExtensions, orderBy, selectMany, skip, take, where;
     get = function(baseObservable, initialData) {
       return {
@@ -254,6 +254,39 @@
           return $.extend({}, get(baseObservable));
         };
       },
+      interModelObservable: function(item, type, property) {
+        return function() {
+          var baseObservable, typeManager;
+          typeManager = (entityManager.getType(type)).interModelManager(property);
+          baseObservable = createBaseObservable(void 0, function() {
+            return [typeManager.subscriptionDefinition(item)];
+          }, function(data, items, changeItems, deleteItems) {
+            var i, oldItem;
+            oldItem = data;
+            if (items && items.length) {
+              i = items[items.length - 1];
+            }
+            if (changeItems && changeItems.length) {
+              i = changeItems[changeItems.length - 1];
+            }
+            if (oldItem !== i) {
+              return {
+                changed: true,
+                data: i
+              };
+            } else {
+              return {
+                changed: false,
+                data: i
+              };
+            }
+          }, function() {
+            var query;
+            return query = typeManager.query.where(typeManager.predicate(item));
+          }, typeManager);
+          return $.extend({}, get(baseObservable));
+        };
+      },
       manyObservable: function(items, type, collection) {
         return function() {
           var baseObservable, typeManager;
@@ -344,13 +377,15 @@
       getMe: function() {
         return observableExtensions;
       },
-      initMe: function() {
+      initMe: function(urls) {
         var deferred;
         deferred = Q.defer();
         require(["breezeEntityManagers"], function(br) {
-          return br.getMe().then(function(em) {
-            entityManager = em;
-            return deferred.resolve();
+          return br.initMe(urls).then(function() {
+            return br.getMe().then(function(em) {
+              entityManager = em;
+              return deferred.resolve();
+            });
           });
         });
         return deferred.promise;

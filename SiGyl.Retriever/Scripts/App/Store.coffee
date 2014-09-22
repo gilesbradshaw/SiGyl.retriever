@@ -38,7 +38,8 @@ define [
 		utils.getMe().process entityType.flexibleRelations, (flexibleRelation)->
 			ret[flexibleRelation.name] = 'flexible' # modelExtensions[model.entityContainer.name].flexibleRelationObservable ret, flexibleRelation.name, entityType
 		utils.getMe().process entityType.interModelRelations, (interModelRelation)->
-			ret[interModelRelation.name] ='intermodel'# modelExtensions[model.entityContainer.name].interModelRelationObservable ret, interModelRelation.name, entityType
+			ret[interModelRelation.name] = observableExtensionsMain.getMe().interModelObservable ret,entityType.name,interModelRelation.name
+			#'intermodel'# modelExtensions[model.entityContainer.name].interModelRelationObservable ret, interModelRelation.name, entityType
 		utils.getMe().process entityType.navigationProperty, (navigationProperty)->
 			association=model.associations[navigationProperty.relationship.split('.')[1]]
 			toEnd= linq.From(association.end).Single((e)->e.role is navigationProperty.toRole)
@@ -49,12 +50,11 @@ define [
 				ret[navigationProperty.name]= observableExtensionsMain.getMe().singleObservable ret, navigationProperty.name, entityType
 		#this is a bit of a frig
 		if entityType.histories
-			ret._histories ={}
 			for history in entityType.histories
-				ret._histories[history.name] = 'his'# modelExtensions.history.rootObservable getKey(entityType,from), history.name, true
+				ret[history.name] = observableExtensionsMain.getMe().rootObservable getKey(entityType,from),history.name
 		#so is this
 		if entityType.Of
-			ret._runtime = modelExtensions.runtime.rootObservable from.RuntimeId, entityType.Of, true
+			ret[entityType.Of] = observableExtensionsMain.getMe().rootObservable from.RuntimeId(), entityType.Of
 		ret.__conceptualModel=->model
 		ret.__entityType=->entityType
 		ret

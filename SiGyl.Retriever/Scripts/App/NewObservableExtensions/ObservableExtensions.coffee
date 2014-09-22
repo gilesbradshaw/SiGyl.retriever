@@ -8,7 +8,6 @@ define [
 	"rx"
 	"breeze"
 	"knockout.rx"
-	"observableExtensions.listener"
 ],(ko,Q,linq,utils,rx,breeze) ->
 
 
@@ -170,6 +169,29 @@ define [
 					typeManager
 				)
 				$.extend {}, get baseObservable
+		interModelObservable:(item,type,property)->
+			()->
+				typeManager = (entityManager.getType type).interModelManager property
+				baseObservable= createBaseObservable(
+					undefined
+					()->[typeManager.subscriptionDefinition item]
+					(data,items, changeItems, deleteItems)->
+						oldItem= data
+						if items && items.length
+							i= items[items.length-1]
+						if changeItems && changeItems.length
+							i = changeItems[changeItems.length-1]
+						if oldItem isnt i
+							changed:true
+							data:i
+						else
+							changed:false
+							data:i
+					()->
+						query = typeManager.query.where typeManager.predicate item
+					typeManager
+				)
+				$.extend {}, get baseObservable
 		manyObservable:(items,type,collection)->
 			()->
 				typeManager = (entityManager.getType type).collectionManager collection
@@ -234,13 +256,13 @@ define [
 
 	entityManager=undefined
 	getMe:->observableExtensions
-	initMe:->
+	initMe:(urls)->
 		deferred=Q.defer()
 		require ["breezeEntityManagers"], (br)->
-			br.getMe().then (em)->
-				entityManager=em
-				deferred.resolve()
-		#ObservableExtensions.modelExtensions={}
+			br.initMe(urls).then ->
+				br.getMe().then (em)->
+					entityManager=em
+					deferred.resolve()
 		deferred.promise
 
 

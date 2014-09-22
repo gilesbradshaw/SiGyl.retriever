@@ -146,7 +146,17 @@ define [
 										new breeze.Predicate dependent.id(), '==', item.Id()
 									$.extend getTypeManager(manager,collectionEntityType,query,predicate,collectionEntityContainer),
 										subscriptionDefinition:(item)->"#{entityType.name}:.#{collection}:#{item.Id()}"
-									
+								interModelManager:(property)->
+									relation = linq.From(entityType.interModelRelations).Single((i)->i.name is property)
+									myManager=getManager relation.name
+									interModelEntityType = myManager.metadata.schema.entityTypes[relation.name]
+									query=breeze.EntityQuery.from(relation.collection).inlineCount()#.where dependent.id(), '==', id
+										#q=q.where dependent.id(), '==', id
+										#q
+									predicate=(item)->
+										new breeze.Predicate relation.foreignKey, '==', item.Id()
+									$.extend getTypeManager(myManager,interModelEntityType,query,predicate,relation.collection),
+										subscriptionDefinition:(item)->"#{relation.name}:.:#{item.Id()}"
 								singleManager:(single)->
 									principal= utils.getMe().getPrincipal entityType, single
 									dependent= utils.getMe().getDependent entityType, single

@@ -33,7 +33,7 @@
         return ret[flexibleRelation.name] = 'flexible';
       });
       utils.getMe().process(entityType.interModelRelations, function(interModelRelation) {
-        return ret[interModelRelation.name] = 'intermodel';
+        return ret[interModelRelation.name] = observableExtensionsMain.getMe().interModelObservable(ret, entityType.name, interModelRelation.name);
       });
       utils.getMe().process(entityType.navigationProperty, function(navigationProperty) {
         var association, toEnd;
@@ -53,15 +53,14 @@
         }
       });
       if (entityType.histories) {
-        ret._histories = {};
         _ref1 = entityType.histories;
         for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
           history = _ref1[_j];
-          ret._histories[history.name] = 'his';
+          ret[history.name] = observableExtensionsMain.getMe().rootObservable(getKey(entityType, from), history.name);
         }
       }
       if (entityType.Of) {
-        ret._runtime = modelExtensions.runtime.rootObservable(from.RuntimeId, entityType.Of, true);
+        ret[entityType.Of] = observableExtensionsMain.getMe().rootObservable(from.RuntimeId(), entityType.Of);
       }
       ret.__conceptualModel = function() {
         return model;
